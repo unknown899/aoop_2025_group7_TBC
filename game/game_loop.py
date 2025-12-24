@@ -88,7 +88,7 @@ async def main_game_loop(screen, clock):
 
     # 蝸牛角色
     try:
-        snail_image = pygame.image.load("images/character/snail.png").convert_alpha()
+        snail_image = pygame.image.load("images/character/snail sprite sheet.png").convert_alpha()
         snail_image = pygame.transform.scale(snail_image, (70, 70))
     except:
         snail_image = pygame.Surface((70, 70), pygame.SRCALPHA)
