@@ -44,7 +44,7 @@ level_config = {
     "spawn_interval": 3000,
     "survival_time": 60, # Survival time in seconds. Assuming this is milliseconds in your game logic?
                         # If it's 60 seconds, ensure your game loop converts it to milliseconds for comparisons.
-    "background_path": "images/background/background3.png", # Corrected path if "background/" means base game folder
+    "background_path": "images/background/background3_x2.png", # Corrected path if "background/" means base game folder
     "our_tower": {
         "y": 140,
         "width": 350,
