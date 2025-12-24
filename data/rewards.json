@@ -1,0 +1,12 @@
+{
+    "stats": {
+        "total_gold": 0,
+        "total_souls": 0,
+        "level_1_cleared": 0, 
+        "level_2_cleared": 0,
+        "level_1": {"clear_time": 0, "first_cleared": false},
+        "level_2": {"clear_time": 0, "first_cleared": false}
+    },
+    "unlocked_cats": ["basic_cat"],
+    "treasures": []
+}
