@@ -49,7 +49,7 @@ def draw_end_screen(screen, current_level, status, end_font, font, our_tower, en
             continue_rect = pygame.Rect(screen.get_width() // 2 - 175, screen.get_height() // 2 + 100, 350, 50)  # 中心點減去寬度一半
             pygame.draw.rect(screen, (0, 255, 0), continue_rect)  # 綠色按鈕
             screen.blit(font.render("Press enter or click to Continue", True, (0, 0, 0)), 
-                       (continue_rect.x + 10, continue_rect.y + 10))
+                       (continue_rect.x + 30, continue_rect.y + 17))
 
     elif status == "lose":
         our_tower.draw_collapse(screen, camera_offset_x)
@@ -61,7 +61,7 @@ def draw_end_screen(screen, current_level, status, end_font, font, our_tower, en
             continue_rect = pygame.Rect(screen.get_width() // 2 - 175, screen.get_height() // 2 + 100, 350, 50)  # 中心點減去寬度一半
             pygame.draw.rect(screen, (0, 255, 0), continue_rect)  # 綠色按鈕
             screen.blit(font.render("Press enter or click to Continue", True, (0, 0, 0)), 
-                       (continue_rect.x + 10, continue_rect.y + 10))
+                       (continue_rect.x + 30, continue_rect.y + 17))
 
     # 返回 Continue 按鈕矩形
     return continue_rect if scale_progress == 1.0 else None
