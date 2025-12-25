@@ -184,3 +184,25 @@ def load_cannonskill_images(
         "sweep_fx": sweep_fx_frames,
         "after_fx": after_fx_frames
     }
+
+def load_cannonicon_image(scale=1.0):
+    ready = []
+    for i in range(1, 3, 1): 
+        img = pygame.image.load(f"images/cannonicon/ready/ready{i}.png").convert_alpha()
+        if scale != 1.0:
+            new_size = (int(img.get_width() * scale), int(img.get_height() * scale))
+            img = pygame.transform.scale(img, new_size)
+        image_copy = img.copy()
+        ready.append(image_copy)
+
+    full = pygame.image.load(f"images/cannonicon/full.png").convert_alpha()
+    if scale != 1.0:
+        new_size = (int(full.get_width() * scale), int(full.get_height() * scale))
+        full = pygame.transform.scale(full, new_size)
+    
+    gray = pygame.image.load(f"images/cannonicon/gray.png").convert_alpha()
+    if scale != 1.0:
+        new_size = (int(gray.get_width() * scale), int(gray.get_height() * scale))
+        gray = pygame.transform.scale(gray, new_size)
+    
+    return ready, full, gray
