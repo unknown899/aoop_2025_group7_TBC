@@ -1,155 +1,95 @@
+# game/game_loop.py
+
 import json
 import os
 import asyncio
 import pygame
-
-# Load reward settings
-from game.rewards import LEVEL_REWARDS
+from game.rewards import LEVEL_REWARDS, draw_reward
 
 # Delay time (ms)
 DELAY_TIME = 2000
 
-# Player resources file
+# Player files
 PLAYER_RESOURCES_FILE = "data/player_resources.json"
-# 貓咪解鎖存檔
 PLAYER_UNLOCKED_CATS_FILE = "data/player_unlocked_cats.json"
-unlocked_cats = set(['basic_cat', 'normal_cat'])  # 初始解鎖 2 隻基礎貓（依你的 cat_types 調整）
 
+# Global variables
+unlocked_cats = {"basic", "eraser"}
+completed_levels = set()
+player_resources = {"gold": 0, "souls": 0}
+selected_cats = []
+selected_level = 0
+game_state = "intro"
 
+# 在其他載入存檔之後新增
+FIRST_CLEAR_CLAIMED_FILE = "data/first_clear_rewards.json"
+claimed_first_clear = {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []], "4": [[], []]}  # 預設結構
 
-# --- Pygame mixer initialization ---
-pygame.mixer.init()
-print(f"Mixer initialized, channels: {pygame.mixer.get_num_channels()}")
-pygame.mixer.music.set_volume(0.5)
-pygame.mixer.set_num_channels(16)
-print(f"Set channels: {pygame.mixer.get_num_channels()}")
+try:
+    if os.path.exists(FIRST_CLEAR_CLAIMED_FILE):
+        with open(FIRST_CLEAR_CLAIMED_FILE, "r") as f:
+            loaded = json.load(f)
+            if isinstance(loaded, dict):
+                claimed_first_clear = {str(k): v for k, v in loaded.items()}  # 確保 key 是 str
+except Exception as e:
+    print(f"Warning: failed to load first_clear claimed: {e}")
 
-# --- Sound loading ---
-cat_spawn_sfx = {}
-if os.path.exists("audio/TBC/010.ogg"):
-    cat_spawn_sfx['default'] = pygame.mixer.Sound("audio/TBC/010.ogg")
-    cat_spawn_sfx['default'].set_volume(0.7)
-else:
-    print("Warning: 'audio/TBC/010.ogg' not found, cat spawn sound will not play.")
-
-victory_sfx = pygame.mixer.Sound("audio/TBC/008.ogg") if os.path.exists("audio/TBC/008.ogg") else None
-defeat_sfx = pygame.mixer.Sound("audio/TBC/009.ogg") if os.path.exists("audio/TBC/009.ogg") else None
-if not victory_sfx:
-    print("Warning: 'audio/TBC/008.ogg' not found, victory sound will not play.")
-if not defeat_sfx:
-    print("Warning: 'audio/TBC/009.ogg' not found, defeat sound will not play.")
-
-key_action_sfx = {
-    'cannot_deploy': pygame.mixer.Sound("audio/TBC/015.ogg") if os.path.exists("audio/TBC/015.ogg") else None,
-    'can_deploy': pygame.mixer.Sound("audio/TBC/014.ogg") if os.path.exists("audio/TBC/014.ogg") else None,
-    'other_button': pygame.mixer.Sound("audio/TBC/011.ogg") if os.path.exists("audio/TBC/011.ogg") else None
-}
-for key, sfx in key_action_sfx.items():
-    if sfx:
-        sfx.set_volume(0.6 if key in ['cannot_deploy', 'can_deploy'] else 0.5)
-    else:
-        print(f"Warning: sound for {key} not found.")
-
-battle_sfx = {
-    'hit_unit': pygame.mixer.Sound("audio/TBC/021.ogg") if os.path.exists("audio/TBC/021.ogg") else None,
-    'hit_tower': pygame.mixer.Sound("audio/TBC/022.ogg") if os.path.exists("audio/TBC/022.ogg") else None,
-    'unit_die': pygame.mixer.Sound("audio/TBC/023.ogg") if os.path.exists("audio/TBC/023.ogg") else None
-}
-for key, sfx in battle_sfx.items():
-    if sfx:
-        sfx.set_volume(0.6 if key in ['hit_unit', 'hit_tower'] else 0.7)
-    else:
-        print(f"Warning: sound for {key} not found.")
-
-boss_intro_sfx = pygame.mixer.Sound("audio/TBC/036.ogg") if os.path.exists("audio/TBC/036.ogg") else None
-if not boss_intro_sfx:
-    print("Warning: 'audio/TBC/036.ogg' not found, boss shockwave sound will not play.")
-
-# --- Main game loop ---
 async def main_game_loop(screen, clock):
+    global unlocked_cats, completed_levels, player_resources
+    global selected_cats, selected_level, game_state, intro_start_time
+    global current_bgm_path, boss_music_active, boss_shockwave_played
+
     FPS = 60
     font = pygame.font.SysFont(None, 25)
     end_font = pygame.font.SysFont(None, 96)
     select_font = pygame.font.SysFont(None, 60)
     budget_font = pygame.font.SysFont(None, 40)
-
     SCREEN_WIDTH = screen.get_width()
     SCREEN_HEIGHT = screen.get_height()
 
-    # 載入背景圖（如果沒有就用純色）
+    # Load backgrounds
     try:
         main_menu_bg = pygame.image.load("./images/map_main_menu.png").convert_alpha()
         main_menu_bg = pygame.transform.scale(main_menu_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
-    except:
+    except Exception as e:
+        print(f"Warning: failed to load main_menu_bg: {e}")
         main_menu_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         main_menu_bg.fill((20, 40, 60))
 
     try:
         level_map_bg = pygame.image.load("./images/map_level_select.png").convert_alpha()
         level_map_bg = pygame.transform.scale(level_map_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
-    except:
+    except Exception as e:
+        print(f"Warning: failed to load level_map_bg: {e}")
         level_map_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         level_map_bg.fill((30, 60, 30))
 
-    # 蝸牛角色
+    # Snail player
     try:
         snail_image = pygame.image.load("./images/character/snail.png").convert_alpha()
         snail_image = pygame.transform.scale(snail_image, (70, 70))
-    except:
+    except Exception as e:
+        print(f"Warning: failed to load snail_image: {e}")
         snail_image = pygame.Surface((70, 70), pygame.SRCALPHA)
         pygame.draw.circle(snail_image, (0, 200, 0), (35, 35), 35)
         pygame.draw.circle(snail_image, (0, 255, 0), (35, 35), 35, 5)
 
-    # 關卡節點座標
+    # Level nodes
     LEVEL_NODES = [
-        (300, 400),   # 關卡 1
-        (600, 250),   # 關卡 2
-        (900, 450),   # 關卡 3
-        (1100, 300),  # 關卡 4
-        (700, 600),  # 關卡 5
+        (300, 400),
+        (600, 250),
+        (900, 450),
+        (1100, 300),
+        (700, 600),
     ]
 
+    # Import entities and UI
     from .battle_logic import update_battle
     from .ui import draw_game_ui, draw_pause_menu, draw_end_screen, draw_intro_screen, draw_ending_animation, draw_level_selection
     from .entities import cat_types, cat_costs, cat_cooldowns, levels, enemy_types, YManager, CSmokeEffect, load_cat_images, OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy, EnemySpawner
     from game.constants import csmoke_images1, csmoke_images2
 
-    selected_level = 0
-    # selected_cats = list(cat_types.keys())[:2]
-    selected_cats = []
-    print(f"初始預設貓咪：{selected_cats}")
-    current_bgm_path = None
-    boss_music_active = False
-    boss_shockwave_played = False
-
-    # Load completed levels
-    completed_levels = set()
-    save_file = "completed_levels.json"
-    try:
-        if os.path.exists(save_file):
-            with open(save_file, "r") as f:
-                loaded_data = json.load(f)
-                if isinstance(loaded_data, list):
-                    completed_levels = set(loaded_data)
-    except Exception as e:
-        print(f"Warning: error loading completed levels: {e}")
-
-    # Load player resources
-    player_resources = {"gold": 0, "souls": 0}
-    try:
-        if os.path.exists(PLAYER_RESOURCES_FILE):
-            with open(PLAYER_RESOURCES_FILE, "r") as f:
-                loaded = json.load(f)
-                player_resources["gold"] = loaded.get("gold", 0)
-                player_resources["souls"] = loaded.get("souls", 0)
-    except Exception as e:
-        print(f"Warning: failed to load player resources: {e}")
-
-    # 角色初始位置
-    player_x, player_y = 300, 400
-    player_speed = 6
-    player_map_pos = [player_x, player_y]  # [x, y] 用 list 讓函數可直接修改
-    # 戰鬥相關變數（在 playing 時初始化）
+    # Battle variables
     cats = []
     enemies = []
     souls = []
@@ -172,13 +112,73 @@ async def main_game_loop(screen, clock):
     square_surface.fill((150, 150, 150, 100))
     cat_images = load_cat_images()
 
-    game_state = "intro"
+    # Load saved data
+    save_file = "completed_levels.json"
+    try:
+        if os.path.exists(save_file):
+            with open(save_file, "r") as f:
+                loaded_data = json.load(f)
+                if isinstance(loaded_data, list):
+                    completed_levels = set(loaded_data)
+    except Exception as e:
+        print(f"Warning: error loading completed levels: {e}")
 
+    try:
+        if os.path.exists(PLAYER_RESOURCES_FILE):
+            with open(PLAYER_RESOURCES_FILE, "r") as f:
+                loaded = json.load(f)
+                player_resources["gold"] = loaded.get("gold", 0)
+                player_resources["souls"] = loaded.get("souls", 0)
+    except Exception as e:
+        print(f"Warning: failed to load player resources: {e}")
+
+    try:
+        if os.path.exists(PLAYER_UNLOCKED_CATS_FILE):
+            with open(PLAYER_UNLOCKED_CATS_FILE, "r") as f:
+                loaded = json.load(f)
+                if isinstance(loaded, list):
+                    unlocked_cats = set(loaded)
+    except Exception as e:
+        print(f"Warning: failed to load unlocked cats: {e}")
+
+    player_map_pos = [300, 400]
     intro_start_time = pygame.time.get_ticks()
     intro_duration = 35000
     fade_in_duration = 5000
 
+    current_bgm_path = None
+    boss_music_active = False
+    boss_shockwave_played = False
 
+    # Sound loading
+    cat_spawn_sfx = {}
+    if os.path.exists("audio/TBC/010.ogg"):
+        cat_spawn_sfx['default'] = pygame.mixer.Sound("audio/TBC/010.ogg")
+        cat_spawn_sfx['default'].set_volume(0.7)
+    else:
+        print("Warning: 'audio/TBC/010.ogg' not found, cat spawn sound will not play.")
+
+    victory_sfx = pygame.mixer.Sound("audio/TBC/008.ogg") if os.path.exists("audio/TBC/008.ogg") else None
+    defeat_sfx = pygame.mixer.Sound("audio/TBC/009.ogg") if os.path.exists("audio/TBC/009.ogg") else None
+    boss_intro_sfx = pygame.mixer.Sound("audio/TBC/036.ogg") if os.path.exists("audio/TBC/036.ogg") else None
+
+    key_action_sfx = {
+        'cannot_deploy': pygame.mixer.Sound("audio/TBC/015.ogg") if os.path.exists("audio/TBC/015.ogg") else None,
+        'can_deploy': pygame.mixer.Sound("audio/TBC/014.ogg") if os.path.exists("audio/TBC/014.ogg") else None,
+        'other_button': pygame.mixer.Sound("audio/TBC/011.ogg") if os.path.exists("audio/TBC/011.ogg") else None
+    }
+    for key, sfx in key_action_sfx.items():
+        if sfx:
+            sfx.set_volume(0.6 if key in ['cannot_deploy', 'can_deploy'] else 0.5)
+
+    battle_sfx = {
+        'hit_unit': pygame.mixer.Sound("audio/TBC/021.ogg") if os.path.exists("audio/TBC/021.ogg") else None,
+        'hit_tower': pygame.mixer.Sound("audio/TBC/022.ogg") if os.path.exists("audio/TBC/022.ogg") else None,
+        'unit_die': pygame.mixer.Sound("audio/TBC/023.ogg") if os.path.exists("audio/TBC/023.ogg") else None
+    }
+    for key, sfx in battle_sfx.items():
+        if sfx:
+            sfx.set_volume(0.6 if key in ['hit_unit', 'hit_tower'] else 0.7)
 
     while True:
         current_time = pygame.time.get_ticks()
@@ -190,16 +190,20 @@ async def main_game_loop(screen, clock):
                 pygame.mixer.music.load(intro_music_path)
                 pygame.mixer.music.play(-1)
                 current_bgm_path = intro_music_path
+
             elapsed_intro_time = current_time - intro_start_time
             current_fade_alpha = int(255 * min(1.0, elapsed_intro_time / fade_in_duration))
-            y_offset = screen.get_height()
+            y_offset = SCREEN_HEIGHT
+
             if elapsed_intro_time >= fade_in_duration:
                 text_progress_time = elapsed_intro_time - fade_in_duration
                 text_scroll_duration = intro_duration - fade_in_duration
                 text_scroll_progress = min(1.0, text_progress_time / text_scroll_duration)
-                y_offset = screen.get_height() * (1 - text_scroll_progress * text_scroll_progress)
+                y_offset = SCREEN_HEIGHT * (1 - text_scroll_progress * text_scroll_progress)
+
             skip_rect = draw_intro_screen(screen, font, y_offset, current_fade_alpha)
             pygame.display.flip()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return
@@ -210,6 +214,7 @@ async def main_game_loop(screen, clock):
                         current_bgm_path = None
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
+
             if elapsed_intro_time >= intro_duration + DELAY_TIME:
                 game_state = "main_menu"
                 pygame.mixer.music.stop()
@@ -230,7 +235,7 @@ async def main_game_loop(screen, clock):
             gacha_text = select_font.render("get gecha", True, (255, 255, 255))
             screen.blit(gacha_text, gacha_text.get_rect(center=gacha_rect.center))
 
-            resource_text = f"Gold: {player_resources['gold']}    Souls: {player_resources['souls']}"
+            resource_text = f"Gold: {player_resources['gold']} Souls: {player_resources['souls']}"
             resource_surf = select_font.render(resource_text, True, (255, 215, 0))
             screen.blit(resource_surf, (50, 30))
 
@@ -252,47 +257,44 @@ async def main_game_loop(screen, clock):
 
         elif game_state == "level_map":
             from .ui.battle_menu import draw_battle_map_selection
-            
             selected_idx, new_state = draw_battle_map_selection(
-                    screen=screen,
-                    level_map_bg=level_map_bg,
-                    snail_image=snail_image,
-                    LEVEL_NODES=LEVEL_NODES,
-                    completed_levels=completed_levels,
-                    player_pos=player_map_pos,
-                    player_speed=6,
-                    select_font=select_font
-                )
-
+                screen=screen,
+                level_map_bg=level_map_bg,
+                snail_image=snail_image,
+                LEVEL_NODES=LEVEL_NODES,
+                completed_levels=completed_levels,
+                player_pos=player_map_pos,
+                player_speed=6,
+                select_font=select_font
+            )
             if new_state == "main_menu":
                 game_state = "main_menu"
                 if key_action_sfx.get('other_button'):
                     key_action_sfx['other_button'].play()
-
             if selected_idx is not None:
                 selected_level = selected_idx
-                # selected_cats = list(cat_types.keys())[:2]  # 重置預設貓咪
-                game_state = "cat_selection"  # 或你原本的 "cat_selection"
+                selected_cats = []  # 清空，讓 cat_selection 重新預選
+                game_state = "cat_selection"
                 if key_action_sfx.get('other_button'):
                     key_action_sfx['other_button'].play()
                 print(f"選擇關卡 {selected_level + 1}: {levels[selected_level].name}")
 
         elif game_state == "cat_selection":
-            unlocked_cats = set()
-            try:
-                if os.path.exists(PLAYER_UNLOCKED_CATS_FILE):
-                    with open(PLAYER_UNLOCKED_CATS_FILE, "r") as f:
-                        loaded = json.load(f)
-                        if isinstance(loaded, list):
-                            unlocked_cats = set(loaded)
-                            # print(f"Loaded unlocked cats: {sorted(unlocked_cats)}")
-            except Exception as e:
-                print(f"Warning: failed to load unlocked cats: {e}")
+            # 使用 draw_level_selection（傳入 unlocked_cats）
+            cat_rects, reset_rect, quit_rect, start_rect = draw_level_selection(
+                screen=screen,
+                levels=levels,
+                selected_level=selected_level,
+                selected_cats=selected_cats,
+                font=font,
+                select_font=select_font,
+                completed_levels=completed_levels,
+                cat_images=cat_images,
+                square_surface=square_surface,
+                unlock_cats=unlocked_cats
+            )
 
-
-            cat_rects, reset_rect, quit_rect, start_rect = draw_level_selection(screen, levels, selected_level, selected_cats, font, select_font, completed_levels, cat_images, square_surface, unlocked_cats)
-
-            resource_text = f"Gold: {player_resources['gold']}    Souls: {player_resources['souls']}"
+            resource_text = f"Gold: {player_resources['gold']} Souls: {player_resources['souls']}"
             resource_surf = select_font.render(resource_text, True, (255, 215, 0))
             screen.blit(resource_surf, (50, 30))
 
@@ -313,70 +315,65 @@ async def main_game_loop(screen, clock):
                             button_rects = {cat_type: pygame.Rect(1100 + idx * 120, 50, 100, 50) for idx, cat_type in enumerate(selected_cats)}
                             if key_action_sfx.get('other_button'):
                                 key_action_sfx['other_button'].play()
+
                     if reset_rect.collidepoint(pos):
                         completed_levels.clear()
                         player_resources = {"gold": 0, "souls": 0}
-                        if os.path.exists(save_file):
-                            os.remove(save_file)
-                        if os.path.exists(PLAYER_RESOURCES_FILE):
-                            os.remove(PLAYER_RESOURCES_FILE)
-                        try:
-                            with open(save_file, "w") as f:
-                                json.dump([], f)
-                        except Exception as e:
-                            print(f"Error resetting save: {e}")
+                        unlocked_cats = {"basic", "eraser"}
+                        selected_cats = []
+                        claimed_first_clear = {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []], "4": [[], []]} 
 
-                        try:
-                            if os.path.exists(PLAYER_UNLOCKED_CATS_FILE):
-                                with open(PLAYER_UNLOCKED_CATS_FILE, "r") as f:
-                                    loaded = json.load(f)
-                                    if isinstance(loaded, list):
-                                        unlocked_cats = set(loaded)
-                                        print(f"Loaded unlocked cats: {sorted(unlocked_cats)}")
-                        except Exception as e:
-                            print(f"Warning: failed to load unlocked cats: {e}")
-                        
+                        for path in [save_file, PLAYER_RESOURCES_FILE, PLAYER_UNLOCKED_CATS_FILE, FIRST_CLEAR_CLAIMED_FILE]:
+                            if os.path.exists(path):
+                                os.remove(path)
+
+                        with open(save_file, "w") as f:
+                            json.dump([], f)
+                        with open(PLAYER_UNLOCKED_CATS_FILE, "w") as f:
+                            json.dump(list(unlocked_cats), f, indent=4)
+                        with open(FIRST_CLEAR_CLAIMED_FILE, "w") as f:
+                            json.dump(claimed_first_clear, f, indent=4)
+
+                        game_state = "intro"
+                        intro_start_time = pygame.time.get_ticks()
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
-                        
-                        game_state = "main_menu"
+
                     if quit_rect.collidepoint(pos):
                         return
+
                     if start_rect.collidepoint(pos):
                         if selected_cats:
                             game_state = "playing"
-                            # 初始化戰鬥變數
                             current_level = levels[selected_level]
                             camera_offset_x = current_level.background.get_width() - SCREEN_WIDTH
                             current_level.reset_towers()
                             our_tower = current_level.our_tower
                             enemy_tower = current_level.enemy_tower
 
-                            # 塔煙霧特效
                             our_tower.csmoke_effects.extend([
                                 CSmokeEffect(our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 - 30,
-                                            our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 + 30,
-                                            csmoke_images1, csmoke_images2, 1000),
+                                             our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 + 30,
+                                             csmoke_images1, csmoke_images2, 1000),
                                 CSmokeEffect(our_tower.x + our_tower.width // 3, our_tower.y + our_tower.height // 2 + 10,
-                                            our_tower.x + our_tower.width // 3, our_tower.y + our_tower.height // 2 + 20,
-                                            csmoke_images1, csmoke_images2, 1000),
+                                             our_tower.x + our_tower.width // 3, our_tower.y + our_tower.height // 2 + 20,
+                                             csmoke_images1, csmoke_images2, 1000),
                                 CSmokeEffect(our_tower.x + our_tower.width // 4, our_tower.y + our_tower.height // 2 + 40,
-                                            our_tower.x + our_tower.width // 5, our_tower.y + our_tower.height // 2,
-                                            csmoke_images1, csmoke_images2, 1000)
+                                             our_tower.x + our_tower.width // 5, our_tower.y + our_tower.height // 2,
+                                             csmoke_images1, csmoke_images2, 1000)
                             ])
                             enemy_tower.csmoke_effects.extend([
                                 CSmokeEffect(enemy_tower.x + enemy_tower.width // 2, enemy_tower.y + enemy_tower.height // 2 - 20,
-                                            enemy_tower.x + enemy_tower.width // 2, enemy_tower.y + enemy_tower.height // 3 + 20,
-                                            csmoke_images1, csmoke_images2, 1000),
+                                             enemy_tower.x + enemy_tower.width // 2, enemy_tower.y + enemy_tower.height // 3 + 20,
+                                             csmoke_images1, csmoke_images2, 1000),
                                 CSmokeEffect(enemy_tower.x + enemy_tower.width // 3, enemy_tower.y + enemy_tower.height // 2 + 30,
-                                            enemy_tower.x + enemy_tower.width // 3, enemy_tower.y + enemy_tower.height // 2,
-                                            csmoke_images1, csmoke_images2, 1000),
+                                             enemy_tower.x + enemy_tower.width // 3, enemy_tower.y + enemy_tower.height // 2,
+                                             csmoke_images1, csmoke_images2, 1000),
                                 CSmokeEffect(enemy_tower.x + enemy_tower.width // 4, enemy_tower.y + enemy_tower.height // 2 + 50,
-                                            enemy_tower.x + enemy_tower.width // 5, enemy_tower.y + enemy_tower.height // 2 + 60,
-                                            csmoke_images1, csmoke_images2, 1000)
+                                             enemy_tower.x + enemy_tower.width // 5, enemy_tower.y + enemy_tower.height // 2 + 60,
+                                             csmoke_images1, csmoke_images2, 1000)
                             ])
 
-                            # 敵人生成
                             mode = current_level.spawn_strategy
                             if mode == "original":
                                 strategy = OriginalSpawnStrategy()
@@ -387,12 +384,10 @@ async def main_game_loop(screen, clock):
                             enemy_spawner = EnemySpawner(strategy)
                             current_level.reset_spawn_counts()
 
-                            # 初始化遊戲物件
                             cats = []
                             enemies = []
                             souls = []
                             shockwave_effects = []
-
                             current_budget = current_level.initial_budget
                             last_budget_increase_time = current_time - 333
                             last_spawn_time = {cat_type: 0 for cat_type in cat_types}
@@ -404,7 +399,6 @@ async def main_game_loop(screen, clock):
                             total_souls_earned = 0
                             is_first_completion = selected_level not in completed_levels
 
-                            # 音樂
                             if current_level.music_path and os.path.exists(current_level.music_path):
                                 pygame.mixer.music.load(current_level.music_path)
                                 pygame.mixer.music.play(-1)
@@ -415,7 +409,6 @@ async def main_game_loop(screen, clock):
                                 current_bgm_path = None
                             boss_shockwave_played = False
 
-                            # ==============================================
                             if key_action_sfx.get('other_button'):
                                 key_action_sfx['other_button'].play()
                         else:
@@ -430,17 +423,16 @@ async def main_game_loop(screen, clock):
                 font=font,
                 key_action_sfx=key_action_sfx
             )
-
             if new_state == "main_menu":
                 game_state = "main_menu"
                 print("返回主選單 from 轉蛋頁面")
 
         elif game_state == "playing":
-            # 每幀更新：貓咪快捷鍵與UI按鈕（選的貓變了也要即時更新）
+            # 更新貓咪快捷鍵與出貓按鈕位置
             button_rects = {cat_type: pygame.Rect(1100 + idx * 120, 50, 100, 50) for idx, cat_type in enumerate(selected_cats)}
             cat_key_map = {pygame.K_1 + i: cat_type for i, cat_type in enumerate(selected_cats[:10])}
 
-            # 繪製遊戲UI（返回 pause_rect 與更新後的 button_rects、camera）
+            # 繪製遊戲 UI（返回 pause_rect 與更新後的 camera_offset_x）
             pause_rect, button_rects, camera_offset_x = draw_game_ui(
                 screen, current_level, current_budget, enemy_tower, current_time, level_start_time,
                 selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x
@@ -467,6 +459,8 @@ async def main_game_loop(screen, clock):
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = event.pos
+
+                    # 點擊暫停按鈕
                     if pause_rect.collidepoint(pos):
                         game_state = "paused"
                         pygame.mixer.music.pause()
@@ -479,6 +473,7 @@ async def main_game_loop(screen, clock):
                             cost = cat_costs.get(cat_type, 0)
                             cooldown = cat_cooldowns.get(cat_type, 0)
                             can_deploy = current_budget >= cost and (current_time - last_spawn_time.get(cat_type, 0) >= cooldown)
+
                             if can_deploy:
                                 current_budget -= cost
                                 our_tower_center = current_level.our_tower.x + current_level.our_tower.width // 2
@@ -488,6 +483,7 @@ async def main_game_loop(screen, clock):
                                 cat.x = our_tower_center - cat.width // 2 - 90
                                 cats.append(cat)
                                 last_spawn_time[cat_type] = current_time
+
                                 if cat_spawn_sfx.get('default'):
                                     cat_spawn_sfx['default'].play()
                                 if key_action_sfx.get('can_deploy'):
@@ -497,12 +493,13 @@ async def main_game_loop(screen, clock):
                                     key_action_sfx['cannot_deploy'].play()
 
                 elif event.type == pygame.KEYDOWN:
-                    # 快捷鍵出貓（1~0）
+                    # 快捷鍵出貓（數字鍵 1~0）
                     if event.key in cat_key_map:
                         cat_type = cat_key_map[event.key]
                         cost = cat_costs.get(cat_type, 0)
                         cooldown = cat_cooldowns.get(cat_type, 0)
                         can_deploy = current_budget >= cost and (current_time - last_spawn_time.get(cat_type, 0) >= cooldown)
+
                         if can_deploy:
                             current_budget -= cost
                             our_tower_center = current_level.our_tower.x + current_level.our_tower.width // 2
@@ -512,6 +509,7 @@ async def main_game_loop(screen, clock):
                             cat.x = our_tower_center - cat.width // 2 - 90
                             cats.append(cat)
                             last_spawn_time[cat_type] = current_time
+
                             if cat_spawn_sfx.get('default'):
                                 cat_spawn_sfx['default'].play()
                             if key_action_sfx.get('can_deploy'):
@@ -520,10 +518,11 @@ async def main_game_loop(screen, clock):
                             if key_action_sfx.get('cannot_deploy'):
                                 key_action_sfx['cannot_deploy'].play()
                     else:
+                        # 其他按鍵（如 ESC 等）可在此擴充
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
 
-            # 相機移動（左右鍵）
+            # 相機左右移動
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
                 camera_offset_x -= 10
@@ -531,7 +530,7 @@ async def main_game_loop(screen, clock):
                 camera_offset_x += 10
             camera_offset_x = max(0, min(camera_offset_x, current_level.background.get_width() - SCREEN_WIDTH))
 
-            # 預算自動增加
+            # 預算自動增加（每 333ms）
             if current_time - last_budget_increase_time >= 333:
                 if current_budget < total_budget_limitation:
                     current_budget = min(current_budget + budget_rate, total_budget_limitation)
@@ -561,7 +560,7 @@ async def main_game_loop(screen, clock):
             for enemy in enemies:
                 enemy.update_status_effects(current_time)
 
-            # 戰鬥邏輯
+            # 戰鬥邏輯更新
             shockwave_effects = update_battle(
                 cats, enemies, our_tower, enemy_tower, current_time, souls,
                 cat_y_manager, enemy_y_manager, shockwave_effects, current_budget, battle_sfx
@@ -572,6 +571,7 @@ async def main_game_loop(screen, clock):
             our_tower.draw(screen, camera_offset_x)
             if enemy_tower:
                 enemy_tower.draw(screen, camera_offset_x)
+
             for soul in souls:
                 soul.draw(screen, camera_offset_x)
             for shockwave in shockwave_effects:
@@ -582,8 +582,19 @@ async def main_game_loop(screen, clock):
                 enemy.draw(screen, camera_offset_x)
 
             pygame.display.flip()
+            claimed_first_clear = {"0": [], "1": [], "2": [], "3": [], "4": []}  # 預設結構
+            try:
+                if os.path.exists(FIRST_CLEAR_CLAIMED_FILE):
+                    with open(FIRST_CLEAR_CLAIMED_FILE, "r") as f:
+                        loaded = json.load(f)
+                        if isinstance(loaded, dict):
+                            claimed_first_clear = {str(k): v for k, v in loaded.items()}  # 確保 key 是 str
+            except Exception as e:
+                print(f"Warning: failed to load first_clear claimed: {e}")
 
-            # ====================== 勝負判斷 ======================
+
+
+            # 勝負判斷
             if our_tower.hp <= 0:
                 if status != "lose":
                     status = "lose"
@@ -594,31 +605,22 @@ async def main_game_loop(screen, clock):
                     boss_shockwave_played = False
                     if defeat_sfx:
                         defeat_sfx.play()
-
+            
             elif enemy_tower and enemy_tower.hp <= 0:
                 if status != "victory":
                     status = "victory"
                     game_state = "end"
-                    pygame.mixer.music.stop()
-                    current_bgm_path = None
-                    boss_music_active = False
-                    boss_shockwave_played = False
-                    if victory_sfx:
-                        victory_sfx.set_volume(0.8)
-                        victory_sfx.play()
-
-                    # ==================== 新版獎勵計算 ====================
-                    from game.rewards import LEVEL_REWARDS, draw_reward
+                    # ... 音效 ...
 
                     clear_time_seconds = (current_time - level_start_time) / 1000
                     reward_data = LEVEL_REWARDS.get(selected_level, {})
-
+                    print(f"關卡 {selected_level} 獲得獎勵資料: {reward_data}")
                     earned_rewards = []
                     total_gold_earned = 0
                     total_souls_earned = 0
                     newly_unlocked_cat = None
 
-                    # 1. 每次通關都抽 repeatable
+                    # 1. repeatable：每次都抽
                     repeatable_pool = reward_data.get("repeatable", [])
                     if repeatable_pool:
                         r = draw_reward(repeatable_pool)
@@ -628,63 +630,85 @@ async def main_game_loop(screen, clock):
                         total_souls_earned += s
                         if g or s:
                             earned_rewards.append(f"Stage Clear: +{g} Gold + {s} Souls")
-                        else:
-                            earned_rewards.append("Stage Clear: No extra reward")
-
-                    # 2. 首次通關專屬獎勵
-                    if is_first_completion:
-                        first_pool = reward_data.get("first_clear", [])
-                        if first_pool:
-                            r = draw_reward(first_pool)
-                            print("=== First Clear 抽獎結果 ===")
-                            print("原始 reward dict:", r)
-                            unlock = r.get("unlock_cat")
-                            print("抽到的 unlock_cat:", unlock)
-                            print("目前 unlocked_cats:", sorted(unlocked_cats))
-                            print("cat_types 所有 key:", list(cat_types.keys()))
-                            
-                            if unlock:
-                                if unlock in cat_types:
-                                    print(f"✓ 成功解鎖: {unlock}")
-                                    unlocked_cats.add(unlock)
-                                    # ... 其他處理
-                                else:
-                                    print(f"✗ 解鎖失敗！'{unlock}' 不在 cat_types 中")
-                            else:
-                                print("這次沒抽到 unlock_cat")
-                        # 多階 Speed Bonus（僅首次）
-                        speed_bonuses = reward_data.get("speed_bonus")
-                        if speed_bonuses and isinstance(speed_bonuses, list):
-                            for bonus in speed_bonuses:
-                                if clear_time_seconds <= bonus["threshold"]:
-                                    sg = bonus.get("gold", 0)
-                                    ss = bonus.get("souls", 0)
-                                    name = bonus.get("bonus_name", "★ Speed Bonus")
-                                    total_gold_earned += sg
-                                    total_souls_earned += ss
-                                    earned_rewards.append(f"{name}: +{sg} Gold + {ss} Souls")
-                                    break  # 只給最高階
-
-                    # 儲存資源與解鎖
-                    player_resources["gold"] += total_gold_earned
-                    player_resources["souls"] += total_souls_earned
+                    import random
+                    # 2. first_clear 金幣靈魂：根據機率獨立觸發
+                    claimed_first_clear =  {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []], "4": [[], []]}
                     try:
-                        os.makedirs("data", exist_ok=True)
-                        with open(PLAYER_RESOURCES_FILE, "w") as f:
-                            json.dump(player_resources, f, indent=4)
-                        if newly_unlocked_cat or is_first_completion:
-                            with open(PLAYER_UNLOCKED_CATS_FILE, "w") as f:
-                                json.dump(list(unlocked_cats), f, indent=4)
+                        if os.path.exists(FIRST_CLEAR_CLAIMED_FILE):
+                            with open(FIRST_CLEAR_CLAIMED_FILE, "r") as f:
+                                loaded = json.load(f)
+                                if isinstance(loaded, dict):
+                                    claimed_first_clear = {str(k): v for k, v in loaded.items()}  # 確保 key 是 str
                     except Exception as e:
-                        print(f"Save error: {e}")
+                        print(f"Warning: failed to load first_clear claimed: {e}")
 
-                    print(f"Victory! Time: {clear_time_seconds:.1f}s")
-                    for r in earned_rewards:
-                        print(r)
+                    is_get = []
+                    for idx, fc in enumerate(reward_data.get("first_clear", [])):
+                        # reward_type = fc.get("type")
+                        chance = fc.get("weight", 0)
+                        roll = min((random.random() * 101), 100)
+                        # print(roll)
+                        if roll <= chance and (idx not in claimed_first_clear[str(selected_level)][0]):
+                            reward_idx = fc.get("reward")
+                            # for r in reward_idx:
+                            g = reward_idx.get("gold", 0)
+                            s = reward_idx.get("souls", 0)
+                            total_gold_earned += g
+                            total_souls_earned += s
+                            if g or s:
+                                earned_rewards.append(f"First Clear Bonus: +{g} Gold + {s} Souls")
+                            unlock = reward_idx.get("unlock_cat")
+                            if unlock and unlock not in unlocked_cats:
+                                unlocked_cats.add(unlock)
+                                newly_unlocked_cat = unlock
+                                earned_rewards.append(f"New Cat Unlocked: {unlock.capitalize()} Cat")
+                            
+                            claimed_first_clear[str(selected_level)][0].append(idx)
+
+                            # is_get.append(idx)
+                    
+                    # 4. speed_bonus：根據時間獨立給（僅第一次通關）
+                    for idx, fc in enumerate(reward_data.get("speed_bonus", [])):
+                        time_limit = fc.get("threshold", 0)
+                        if clear_time_seconds <= time_limit and claimed_first_clear[str(selected_level)][1]:
+                            reward_idx = fc.get("reward")
+                            for r in reward_idx:
+                                g = r.get("gold", 0)
+                                s = r.get("souls", 0)
+                                total_gold_earned += g
+                                total_souls_earned += s
+                                if g or s:
+                                    earned_rewards.append(f"Speed Bonus: +{g} Gold + {s} Souls")
+                                unlock = r.get("unlock_cat")
+                                if unlock and unlock not in unlocked_cats:
+                                    unlocked_cats.add(unlock)
+                                    newly_unlocked_cat = unlock
+                                    earned_rewards.append(f"New Cat Unlocked: {unlock.capitalize()} Cat")
+                            
+                            claimed_first_clear[str(selected_level)][1].append(idx)
+
+                            # is_get.append(idx)
+                        # 存 completed_levels
+                    player_resources["souls"] += total_souls_earned
+                    player_resources["gold"] += total_gold_earned
+                    # 儲存所有記錄
+                    try:
+                        with open(PLAYER_RESOURCES_FILE, "w") as f:
+                            json.dump({
+                                "gold": player_resources["gold"] ,
+                                "souls": player_resources["souls"] 
+                            }, f, indent=4)
+                        with open(PLAYER_UNLOCKED_CATS_FILE, "w") as f:
+                            json.dump(list(unlocked_cats), f, indent=4)
+                        with open(FIRST_CLEAR_CLAIMED_FILE, "w") as f:
+                            json.dump(claimed_first_clear, f, indent=4)
+                    except Exception as e:
+                        print(f"Warning: failed to save player data: {e}")
 
         elif game_state == "paused":
             end_rect, continue_rect = draw_pause_menu(screen, font, current_level)
             pygame.display.flip()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return
@@ -717,20 +741,19 @@ async def main_game_loop(screen, clock):
             victory_display_time = getattr(pygame.time, "victory_display_time", 0)
             if status == "victory" and victory_display_time == 0:
                 pygame.time.victory_display_time = pygame.time.get_ticks()
-
             continue_rect = draw_end_screen(screen, current_level, status, end_font, font, our_tower, enemy_tower, victory_display_time, camera_offset_x)
 
             if status == "victory" and earned_rewards:
                 reward_y = 280
                 title_surf = end_font.render("Rewards Earned!", True, (255, 255, 100))
-                screen.blit(title_surf, (screen.get_width() // 2 - title_surf.get_width() // 2, reward_y))
+                screen.blit(title_surf, (SCREEN_WIDTH // 2 - title_surf.get_width() // 2, reward_y))
                 reward_y += 100
                 for reward_text in earned_rewards:
                     text_surf = select_font.render(reward_text, True, (255, 255, 200))
-                    screen.blit(text_surf, (screen.get_width() // 2 - text_surf.get_width() // 2, reward_y))
+                    screen.blit(text_surf, (SCREEN_WIDTH // 2 - text_surf.get_width() // 2, reward_y))
                     reward_y += 60
                 total_text = select_font.render(f"Total: {total_gold_earned} Gold + {total_souls_earned} Souls", True, (255, 255, 0))
-                screen.blit(total_text, (screen.get_width() // 2 - total_text.get_width() // 2, reward_y + 20))
+                screen.blit(total_text, (SCREEN_WIDTH // 2 - total_text.get_width() // 2, reward_y + 20))
 
             pygame.display.flip()
 
@@ -741,66 +764,59 @@ async def main_game_loop(screen, clock):
                     if event.key == pygame.K_RETURN:
                         if status == "victory":
                             completed_levels.add(selected_level)
-                            print(selected_level)
-                            next_level = selected_level + 1
-                            # if next_level < len(levels):
-                            #     completed_levels.add(next_level)
                             try:
                                 with open(save_file, "w") as f:
                                     json.dump(list(completed_levels), f)
                             except Exception as e:
                                 print(f"Save error: {e}")
-                        if status == "victory" and is_last_level:
-                            game_state = "ending"
-                            pygame.time.ending_start_time = pygame.time.get_ticks()
-                        else:
-                            game_state = "main_menu"
-                            our_tower = None
-                            enemy_tower = None
-                            cats.clear()
-                            enemies.clear()
-                            souls.clear()
-                            shockwave_effects.clear()
-                            current_budget = 1000
-                            pygame.mixer.music.stop()
-                            current_bgm_path = None
-                            boss_music_active = False
-                            boss_shockwave_played = False
-                            setattr(pygame.time, "victory_display_time", 0)
-                            if key_action_sfx.get('other_button'):
-                                key_action_sfx['other_button'].play()
+                            if status == "victory" and is_last_level:
+                                game_state = "ending"
+                                pygame.time.ending_start_time = pygame.time.get_ticks()
+                            else:
+                                game_state = "main_menu"
+                                our_tower = None
+                                enemy_tower = None
+                                cats.clear()
+                                enemies.clear()
+                                souls.clear()
+                                shockwave_effects.clear()
+                                current_budget = 1000
+                                pygame.mixer.music.stop()
+                                current_bgm_path = None
+                                boss_music_active = False
+                                boss_shockwave_played = False
+                                setattr(pygame.time, "victory_display_time", 0)
+                                if key_action_sfx.get('other_button'):
+                                    key_action_sfx['other_button'].play()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = event.pos
                     if continue_rect and continue_rect.collidepoint(pos):
                         if status == "victory":
                             completed_levels.add(selected_level)
-                            next_level = selected_level + 1
-                            # if next_level < len(levels):
-                            #     completed_levels.add(next_level)
                             try:
                                 with open(save_file, "w") as f:
                                     json.dump(list(completed_levels), f)
                             except Exception as e:
                                 print(f"Save error: {e}")
-                        if status == "victory" and is_last_level:
-                            game_state = "ending"
-                            pygame.time.ending_start_time = pygame.time.get_ticks()
-                        else:
-                            game_state = "main_menu"
-                            our_tower = None
-                            enemy_tower = None
-                            cats.clear()
-                            enemies.clear()
-                            souls.clear()
-                            shockwave_effects.clear()
-                            current_budget = 1000
-                            pygame.mixer.music.stop()
-                            current_bgm_path = None
-                            boss_music_active = False
-                            boss_shockwave_played = False
-                            setattr(pygame.time, "victory_display_time", 0)
-                            if key_action_sfx.get('other_button'):
-                                key_action_sfx['other_button'].play()
+                            if status == "victory" and is_last_level:
+                                game_state = "ending"
+                                pygame.time.ending_start_time = pygame.time.get_ticks()
+                            else:
+                                game_state = "main_menu"
+                                our_tower = None
+                                enemy_tower = None
+                                cats.clear()
+                                enemies.clear()
+                                souls.clear()
+                                shockwave_effects.clear()
+                                current_budget = 1000
+                                pygame.mixer.music.stop()
+                                current_bgm_path = None
+                                boss_music_active = False
+                                boss_shockwave_played = False
+                                setattr(pygame.time, "victory_display_time", 0)
+                                if key_action_sfx.get('other_button'):
+                                    key_action_sfx['other_button'].play()
 
         elif game_state == "ending":
             ending_start_time = getattr(pygame.time, "ending_start_time", pygame.time.get_ticks())
@@ -823,12 +839,12 @@ async def main_game_loop(screen, clock):
                     pygame.time.ending_music_initialized = False
             elapsed_time = current_time - ending_start_time
             current_fade_alpha = int(255 * min(1.0, elapsed_time / fade_in_duration))
-            y_offset = screen.get_height()
+            y_offset = SCREEN_HEIGHT
             if elapsed_time >= fade_in_duration:
                 text_progress_time = elapsed_time - fade_in_duration
                 text_scroll_duration = ending_duration - fade_in_duration
                 text_scroll_progress = min(1.0, text_progress_time / text_scroll_duration)
-                y_offset = screen.get_height() * (1 - text_scroll_progress * text_scroll_progress)
+                y_offset = SCREEN_HEIGHT * (1 - text_scroll_progress * text_scroll_progress)
             skip_rect = draw_ending_animation(screen, font, y_offset, current_fade_alpha)
             pygame.display.flip()
             for event in pygame.event.get():
