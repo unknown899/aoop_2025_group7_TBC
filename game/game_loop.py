@@ -11,6 +11,11 @@ DELAY_TIME = 2000
 
 # Player resources file
 PLAYER_RESOURCES_FILE = "data/player_resources.json"
+# 貓咪解鎖存檔
+PLAYER_UNLOCKED_CATS_FILE = "data/player_unlocked_cats.json"
+unlocked_cats = set(['basic_cat', 'normal_cat'])  # 初始解鎖 2 隻基礎貓（依你的 cat_types 調整）
+
+
 
 # --- Pygame mixer initialization ---
 pygame.mixer.init()
@@ -110,7 +115,9 @@ async def main_game_loop(screen, clock):
     from game.constants import csmoke_images1, csmoke_images2
 
     selected_level = 0
-    selected_cats = list(cat_types.keys())[:2]
+    # selected_cats = list(cat_types.keys())[:2]
+    selected_cats = []
+    print(f"初始預設貓咪：{selected_cats}")
     current_bgm_path = None
     boss_music_active = False
     boss_shockwave_played = False
@@ -262,14 +269,26 @@ async def main_game_loop(screen, clock):
 
             if selected_idx is not None:
                 selected_level = selected_idx
-                selected_cats = list(cat_types.keys())[:2]  # 重置預設貓咪
+                # selected_cats = list(cat_types.keys())[:2]  # 重置預設貓咪
                 game_state = "cat_selection"  # 或你原本的 "cat_selection"
                 if key_action_sfx.get('other_button'):
                     key_action_sfx['other_button'].play()
                 print(f"選擇關卡 {selected_level + 1}: {levels[selected_level].name}")
 
         elif game_state == "cat_selection":
-            cat_rects, reset_rect, quit_rect, start_rect = draw_level_selection(screen, levels, selected_level, selected_cats, font, select_font, completed_levels, cat_images, square_surface)
+            unlocked_cats = set()
+            try:
+                if os.path.exists(PLAYER_UNLOCKED_CATS_FILE):
+                    with open(PLAYER_UNLOCKED_CATS_FILE, "r") as f:
+                        loaded = json.load(f)
+                        if isinstance(loaded, list):
+                            unlocked_cats = set(loaded)
+                            # print(f"Loaded unlocked cats: {sorted(unlocked_cats)}")
+            except Exception as e:
+                print(f"Warning: failed to load unlocked cats: {e}")
+
+
+            cat_rects, reset_rect, quit_rect, start_rect = draw_level_selection(screen, levels, selected_level, selected_cats, font, select_font, completed_levels, cat_images, square_surface, unlocked_cats)
 
             resource_text = f"Gold: {player_resources['gold']}    Souls: {player_resources['souls']}"
             resource_surf = select_font.render(resource_text, True, (255, 215, 0))
@@ -304,8 +323,21 @@ async def main_game_loop(screen, clock):
                                 json.dump([], f)
                         except Exception as e:
                             print(f"Error resetting save: {e}")
+
+                        try:
+                            if os.path.exists(PLAYER_UNLOCKED_CATS_FILE):
+                                with open(PLAYER_UNLOCKED_CATS_FILE, "r") as f:
+                                    loaded = json.load(f)
+                                    if isinstance(loaded, list):
+                                        unlocked_cats = set(loaded)
+                                        print(f"Loaded unlocked cats: {sorted(unlocked_cats)}")
+                        except Exception as e:
+                            print(f"Warning: failed to load unlocked cats: {e}")
+                        
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
+                        
+                        game_state = "main_menu"
                     if quit_rect.collidepoint(pos):
                         return
                     if start_rect.collidepoint(pos):
@@ -402,29 +434,35 @@ async def main_game_loop(screen, clock):
                 print("返回主選單 from 轉蛋頁面")
 
         elif game_state == "playing":
-
-            # 貓咪按鈕與鍵位
+            # 每幀更新：貓咪快捷鍵與UI按鈕（選的貓變了也要即時更新）
             button_rects = {cat_type: pygame.Rect(1100 + idx * 120, 50, 100, 50) for idx, cat_type in enumerate(selected_cats)}
             cat_key_map = {pygame.K_1 + i: cat_type for i, cat_type in enumerate(selected_cats[:10])}
 
-            # 戰鬥主迴圈
-            pause_rect, button_rects, camera_offset_x = draw_game_ui(screen, current_level, current_budget, enemy_tower, current_time, level_start_time, selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x)
+            # 繪製遊戲UI（返回 pause_rect 與更新後的 button_rects、camera）
+            pause_rect, button_rects, camera_offset_x = draw_game_ui(
+                screen, current_level, current_budget, enemy_tower, current_time, level_start_time,
+                selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x
+            )
 
+            # Boss 登場特效與音樂切換（只播放一次）
             any_boss_present = any(enemy.is_boss for enemy in enemies)
             if any_boss_present and not boss_shockwave_played:
                 if boss_intro_sfx:
                     boss_intro_sfx.play()
                 boss_shockwave_played = True
-                if current_level.switch_music_on_boss and not boss_music_active:
-                    if current_level.boss_music_path and os.path.exists(current_level.boss_music_path):
-                        pygame.mixer.music.load(current_level.boss_music_path)
-                        pygame.mixer.music.play(-1)
-                        current_bgm_path = current_level.boss_music_path
-                        boss_music_active = True
 
+            if current_level.switch_music_on_boss and not boss_music_active and any_boss_present:
+                if current_level.boss_music_path and os.path.exists(current_level.boss_music_path):
+                    pygame.mixer.music.load(current_level.boss_music_path)
+                    pygame.mixer.music.play(-1)
+                    current_bgm_path = current_level.boss_music_path
+                    boss_music_active = True
+
+            # 事件處理
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return
+
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = event.pos
                     if pause_rect.collidepoint(pos):
@@ -432,6 +470,8 @@ async def main_game_loop(screen, clock):
                         pygame.mixer.music.pause()
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
+
+                    # 點擊出貓按鈕
                     for cat_type, rect in button_rects.items():
                         if rect.collidepoint(pos):
                             cost = cat_costs.get(cat_type, 0)
@@ -439,12 +479,11 @@ async def main_game_loop(screen, clock):
                             can_deploy = current_budget >= cost and (current_time - last_spawn_time.get(cat_type, 0) >= cooldown)
                             if can_deploy:
                                 current_budget -= cost
-                                our_tower_center = current_level.our_tower.x + current_level.our_tower.width / 2
+                                our_tower_center = current_level.our_tower.x + current_level.our_tower.width // 2
                                 cat_y, cat_slot = cat_y_manager.get_available_y()
                                 cat = cat_types[cat_type](our_tower_center, cat_y)
                                 cat.slot_index = cat_slot
-                                start_x = our_tower_center - cat.width / 2 - 90
-                                cat.x = start_x
+                                cat.x = our_tower_center - cat.width // 2 - 90
                                 cats.append(cat)
                                 last_spawn_time[cat_type] = current_time
                                 if cat_spawn_sfx.get('default'):
@@ -454,7 +493,9 @@ async def main_game_loop(screen, clock):
                             else:
                                 if key_action_sfx.get('cannot_deploy'):
                                     key_action_sfx['cannot_deploy'].play()
+
                 elif event.type == pygame.KEYDOWN:
+                    # 快捷鍵出貓（1~0）
                     if event.key in cat_key_map:
                         cat_type = cat_key_map[event.key]
                         cost = cat_costs.get(cat_type, 0)
@@ -462,12 +503,11 @@ async def main_game_loop(screen, clock):
                         can_deploy = current_budget >= cost and (current_time - last_spawn_time.get(cat_type, 0) >= cooldown)
                         if can_deploy:
                             current_budget -= cost
-                            our_tower_center = current_level.our_tower.x + current_level.our_tower.width / 2
+                            our_tower_center = current_level.our_tower.x + current_level.our_tower.width // 2
                             cat_y, cat_slot = cat_y_manager.get_available_y()
                             cat = cat_types[cat_type](our_tower_center, cat_y)
                             cat.slot_index = cat_slot
-                            start_x = our_tower_center - cat.width / 2 - 90
-                            cat.x = start_x
+                            cat.x = our_tower_center - cat.width // 2 - 90
                             cats.append(cat)
                             last_spawn_time[cat_type] = current_time
                             if cat_spawn_sfx.get('default'):
@@ -480,18 +520,22 @@ async def main_game_loop(screen, clock):
                     else:
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
-                    keys = pygame.key.get_pressed()
-                    if keys[pygame.K_LEFT]:
-                        camera_offset_x -= 10
-                    if keys[pygame.K_RIGHT]:
-                        camera_offset_x += 10
-                    camera_offset_x = max(0, min(camera_offset_x, current_level.background.get_width() - SCREEN_WIDTH))
 
+            # 相機移動（左右鍵）
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                camera_offset_x -= 10
+            if keys[pygame.K_RIGHT]:
+                camera_offset_x += 10
+            camera_offset_x = max(0, min(camera_offset_x, current_level.background.get_width() - SCREEN_WIDTH))
+
+            # 預算自動增加
             if current_time - last_budget_increase_time >= 333:
                 if current_budget < total_budget_limitation:
                     current_budget = min(current_budget + budget_rate, total_budget_limitation)
                 last_budget_increase_time = current_time
-            
+
+            # 敵人生成
             tower_hp_percent = (enemy_tower.hp / enemy_tower.max_hp) * 100 if enemy_tower else 0
             context = {
                 "tower_hp_percent": tower_hp_percent,
@@ -509,14 +553,20 @@ async def main_game_loop(screen, clock):
             )
             current_level.all_limited_spawned = current_level.check_all_limited_spawned()
 
+            # 更新狀態效果
             for cat in cats:
                 cat.update_status_effects(current_time)
             for enemy in enemies:
                 enemy.update_status_effects(current_time)
 
-            shockwave_effects = update_battle(cats, enemies, our_tower, enemy_tower, current_time, souls, cat_y_manager, enemy_y_manager, shockwave_effects, current_budget, battle_sfx)
+            # 戰鬥邏輯
+            shockwave_effects = update_battle(
+                cats, enemies, our_tower, enemy_tower, current_time, souls,
+                cat_y_manager, enemy_y_manager, shockwave_effects, current_budget, battle_sfx
+            )
             souls = [soul for soul in souls if soul.update()]
 
+            # 繪製所有物件
             our_tower.draw(screen, camera_offset_x)
             if enemy_tower:
                 enemy_tower.draw(screen, camera_offset_x)
@@ -528,8 +578,10 @@ async def main_game_loop(screen, clock):
                 cat.draw(screen, camera_offset_x)
             for enemy in enemies:
                 enemy.draw(screen, camera_offset_x)
+
             pygame.display.flip()
 
+            # ====================== 勝負判斷 ======================
             if our_tower.hp <= 0:
                 if status != "lose":
                     status = "lose"
@@ -549,48 +601,84 @@ async def main_game_loop(screen, clock):
                     current_bgm_path = None
                     boss_music_active = False
                     boss_shockwave_played = False
-
-                    clear_time_seconds = (current_time - level_start_time) / 1000
-                    reward_data = LEVEL_REWARDS.get(selected_level, {})
-                    earned_rewards = []
-                    total_gold_earned = 0
-                    total_souls_earned = 0
-
-                    base_gold = reward_data.get("base_gold", 100)
-                    base_souls = reward_data.get("base_souls", 10)
-                    total_gold_earned += base_gold
-                    total_souls_earned += base_souls
-                    earned_rewards.append(f"Stage Clear: {base_gold} Gold + {base_souls} Souls")
-
-                    speed_bonus = reward_data.get("speed_bonus", {})
-                    if speed_bonus and clear_time_seconds <= speed_bonus["threshold"]:
-                        total_gold_earned += speed_bonus["gold"]
-                        total_souls_earned += speed_bonus["souls"]
-                        earned_rewards.append(f"★ Speed Clear Bonus: +{speed_bonus['gold']} Gold + {speed_bonus['souls']} Souls")
-
-                    if is_first_completion:
-                        first = reward_data.get("first_clear", {})
-                        extra_gold = first.get("gold", 200)
-                        extra_souls = first.get("souls", 30)
-                        total_gold_earned += extra_gold
-                        total_souls_earned += extra_souls
-                        earned_rewards.append(f"★ First Clear Bonus: +{extra_gold} Gold + {extra_souls} Souls")
-                        if "unlock_cat" in first:
-                            cat_name = first["unlock_cat"].replace('_', ' ').title()
-                            earned_rewards.append(f"★ New Cat Unlocked: {cat_name}!")
-
-                    player_resources["gold"] += total_gold_earned
-                    player_resources["souls"] += total_souls_earned
-                    try:
-                        os.makedirs(os.path.dirname(PLAYER_RESOURCES_FILE), exist_ok=True)
-                        with open(PLAYER_RESOURCES_FILE, "w") as f:
-                            json.dump(player_resources, f, indent=4)
-                    except Exception as e:
-                        print(f"Failed to save resources: {e}")
-
                     if victory_sfx:
                         victory_sfx.set_volume(0.8)
                         victory_sfx.play()
+
+                    # ==================== 新版獎勵計算 ====================
+                    from game.rewards import LEVEL_REWARDS, draw_reward
+
+                    clear_time_seconds = (current_time - level_start_time) / 1000
+                    reward_data = LEVEL_REWARDS.get(selected_level, {})
+
+                    earned_rewards = []
+                    total_gold_earned = 0
+                    total_souls_earned = 0
+                    newly_unlocked_cat = None
+
+                    # 1. 每次通關都抽 repeatable
+                    repeatable_pool = reward_data.get("repeatable", [])
+                    if repeatable_pool:
+                        r = draw_reward(repeatable_pool)
+                        g = r.get("gold", 0)
+                        s = r.get("souls", 0)
+                        total_gold_earned += g
+                        total_souls_earned += s
+                        if g or s:
+                            earned_rewards.append(f"Stage Clear: +{g} Gold + {s} Souls")
+                        else:
+                            earned_rewards.append("Stage Clear: No extra reward")
+
+                    # 2. 首次通關專屬獎勵
+                    if is_first_completion:
+                        first_pool = reward_data.get("first_clear", [])
+                        if first_pool:
+                            r = draw_reward(first_pool)
+                            print("=== First Clear 抽獎結果 ===")
+                            print("原始 reward dict:", r)
+                            unlock = r.get("unlock_cat")
+                            print("抽到的 unlock_cat:", unlock)
+                            print("目前 unlocked_cats:", sorted(unlocked_cats))
+                            print("cat_types 所有 key:", list(cat_types.keys()))
+                            
+                            if unlock:
+                                if unlock in cat_types:
+                                    print(f"✓ 成功解鎖: {unlock}")
+                                    unlocked_cats.add(unlock)
+                                    # ... 其他處理
+                                else:
+                                    print(f"✗ 解鎖失敗！'{unlock}' 不在 cat_types 中")
+                            else:
+                                print("這次沒抽到 unlock_cat")
+                        # 多階 Speed Bonus（僅首次）
+                        speed_bonuses = reward_data.get("speed_bonus")
+                        if speed_bonuses and isinstance(speed_bonuses, list):
+                            for bonus in speed_bonuses:
+                                if clear_time_seconds <= bonus["threshold"]:
+                                    sg = bonus.get("gold", 0)
+                                    ss = bonus.get("souls", 0)
+                                    name = bonus.get("bonus_name", "★ Speed Bonus")
+                                    total_gold_earned += sg
+                                    total_souls_earned += ss
+                                    earned_rewards.append(f"{name}: +{sg} Gold + {ss} Souls")
+                                    break  # 只給最高階
+
+                    # 儲存資源與解鎖
+                    player_resources["gold"] += total_gold_earned
+                    player_resources["souls"] += total_souls_earned
+                    try:
+                        os.makedirs("data", exist_ok=True)
+                        with open(PLAYER_RESOURCES_FILE, "w") as f:
+                            json.dump(player_resources, f, indent=4)
+                        if newly_unlocked_cat or is_first_completion:
+                            with open(PLAYER_UNLOCKED_CATS_FILE, "w") as f:
+                                json.dump(list(unlocked_cats), f, indent=4)
+                    except Exception as e:
+                        print(f"Save error: {e}")
+
+                    print(f"Victory! Time: {clear_time_seconds:.1f}s")
+                    for r in earned_rewards:
+                        print(r)
 
         elif game_state == "paused":
             end_rect, continue_rect = draw_pause_menu(screen, font, current_level)
