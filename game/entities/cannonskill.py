@@ -51,7 +51,7 @@ class CannonSkill:
         self.state = "ready"
         self.start_time = 0
         self.cooldown_start = 0
-        self.after_duration = after_duration
+        self.after_duration = range/sweep_speed
         self.after_start_time = 0  # 紀錄進入 after 狀態的時間
 
         # --- 動畫 ---
@@ -72,7 +72,7 @@ class CannonSkill:
     # ======================================================
     # 更新
     # ======================================================
-    def update(self, current_time, enemies):
+    def update(self, current_time, enemies, enemy_tower):
         #self.anim_index += 1
         self.current_time_ms = current_time
 
@@ -86,7 +86,7 @@ class CannonSkill:
                 self.after_x = self.sweep_start_x
                 self.after_start_time = current_time # <--- 新增這一行
                 # 結算傷害（只在這裡一次）
-                self._apply_damage(enemies)
+                self._apply_damage(enemies, enemy_tower)
 
         # ---------- 掃射後地面殘影 ----------
         elif self.state == "after":
@@ -225,7 +225,7 @@ class CannonSkill:
     # ======================================================
     # 傷害計算（只在掃射結束）
     # ======================================================
-    def _apply_damage(self, enemies):
+    def _apply_damage(self, enemies, enemy_tower):
         print(f"Applying damage to enemies between x={self.sweep_start_x} and x={self.sweep_end_x}")
         for e in enemies:
             print(f"Checking enemy at x={e.x} with width={e.width}")
@@ -236,6 +236,15 @@ class CannonSkill:
             if self.sweep_start_x >= enemy_left and enemy_right >= self.sweep_end_x:
                 e.take_damage(self.damage, "physic")
                 print(f" - Enemy at x={e.x} took {self.damage} damage!")
+        # 檢查敵方塔樓
+        print(f"Checking enemy_tower at x={enemy_tower.x} with width={enemy_tower.width}")
+        # 獲取敵方塔的左右邊界
+        enemy_left = enemy_tower.x
+        enemy_right = enemy_tower.x + enemy_tower.width
+        # 檢查敵方塔是否在掃射範圍內(may not correct for other direction)
+        if self.sweep_start_x >= enemy_left and enemy_right >= self.sweep_end_x:
+            enemy_tower.take_damage(self.damage, "physic")
+            print(f" - Enemy_tower at x={enemy_tower.x} took {self.damage} damage!")
                         
             
                 

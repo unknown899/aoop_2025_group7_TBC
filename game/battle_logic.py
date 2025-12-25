@@ -47,9 +47,9 @@ def update_battle(cats, enemies, our_tower, enemy_tower, now, souls, cat_y_manag
         enemy_tower.update_physic_effects()
         enemy_tower.update_electric_effects()
         enemy_tower.update_gas_effects()
-        
+
     current_time = pygame.time.get_ticks()
-    cannon.update(current_time, enemies)
+    cannon.update(current_time, enemies, enemy_tower)
 
     # --- Boss 出場震波特效觸發 ---
     # 檢查新生成的 Boss，觸發出場震波特效。

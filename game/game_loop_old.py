@@ -288,9 +288,9 @@ async def main_game_loop(screen, clock):
                                 cannon = CannonSkill(
                                     origin_pos=(our_tower_center-our_tower.width//4-10, 205),
                                     sweep_start_x=our_tower_center-our_tower.width//2,
-                                    range=400,
+                                    range=2600,
                                     ground_y=460,
-                                    sweep_speed=1.2,
+                                    sweep_speed=2.5,
                                     cooldown=5000,
                                     damage=300,
                                     origin_frames=cannon_images["origin"],
@@ -381,9 +381,9 @@ async def main_game_loop(screen, clock):
                                 cannon = CannonSkill(
                                     origin_pos=(our_tower_center-our_tower.width//4-10, 205),
                                     sweep_start_x=our_tower_center-our_tower.width//2,
-                                    range=400,
+                                    range=2600,
                                     ground_y=460,
-                                    sweep_speed=1.2,
+                                    sweep_speed=2.5,
                                     cooldown=5000,
                                     damage=300,
                                     origin_frames=cannon_images["origin"],
@@ -391,7 +391,7 @@ async def main_game_loop(screen, clock):
                                     sweep_fx_frames=cannon_images["sweep_fx"],
                                     after_fx_frames=cannon_images["after_fx"],
                                     frame_duration1=80,# for sweep_fx
-                                    frame_duration2=100# for after_fx
+                                    frame_duration2=100,# for after_fx
                                 )
                                 cannon_icon = CannonIcon(ui_pos=(1090, 420), icon_config=icon_cfg, ui_frame_duration=100)
                                 current_level.reset_spawn_counts()
