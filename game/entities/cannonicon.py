@@ -1,7 +1,7 @@
 import pygame
 
 class CannonIcon:
-    def __init__(self, ui_pos, icon_config):
+    def __init__(self, ui_pos, icon_config, ui_frame_duration=500):
         """
         icon_config 需包含:
         - 'ready': [Surface] (準備好時的動畫幀)
@@ -14,6 +14,7 @@ class CannonIcon:
         self.full_img = icon_config['full']
         self.gray_img = icon_config['gray']
         self.top_bound, self.bottom_bound = icon_config['bounds']
+        self.ui_frame_duration = ui_frame_duration # 預設 500ms 換一張圖
         
         # 用於點擊偵測的矩形與 Mask
         self.rect = self.full_img.get_rect(topleft=ui_pos)
@@ -28,15 +29,16 @@ class CannonIcon:
             return self.mask.get_at((rel_x, rel_y))
         return False
 
-    def draw(self, screen, skill_state, progress, anim_index):
+    def draw(self, screen, skill_state, progress, current_time):
         """
         skill_state: 來自 CannonSkill 的 state
         progress: 0.0 ~ 1.0 的冷卻百分比
         anim_index: 來自 CannonSkill 的動畫計數
         """
         if skill_state == "ready":
-            # 狀態為 Ready 時：播放動畫幀
-            img = self.ready_frames[(anim_index // 30) % len(self.ready_frames)]
+            # 使用傳入的 current_time 計算 UI 影格
+            idx = (current_time // self.ui_frame_duration) % len(self.ready_frames)
+            img = self.ready_frames[idx]
             screen.blit(img, self.rect)
         else:
             # 狀態為 Sweeping, After 或 Cooldown 時：顯示灰階底圖 + 彩色注水

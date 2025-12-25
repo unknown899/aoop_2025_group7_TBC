@@ -254,6 +254,7 @@ async def main_game_loop(screen, clock):
                                 current_level.reset_towers()
                                 our_tower = current_level.our_tower
                                 enemy_tower = current_level.enemy_tower
+                                our_tower_center = current_level.background.get_width()/2 + current_level.tower_distance / 2
                                 our_tower.csmoke_effects.extend([
                                     CSmokeEffect(our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 - 30,
                                                  our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 + 30,
@@ -292,9 +293,10 @@ async def main_game_loop(screen, clock):
                                     origin_frames=cannon_images["origin"],
                                     beam_frames=cannon_images["beam"],
                                     sweep_fx_frames=cannon_images["sweep_fx"],
-                                    after_fx_frames=cannon_images["after_fx"]
+                                    after_fx_frames=cannon_images["after_fx"],
+                                    frame_duration=80
                                 )
-                                cannon_icon = CannonIcon(ui_pos=(1150, 20), icon_config=icon_cfg)
+                                cannon_icon = CannonIcon(ui_pos=(1150, 20), icon_config=icon_cfg, ui_frame_duration=800)
                                 current_level.reset_spawn_counts()
                                 cats.clear()
                                 souls.clear()
@@ -341,6 +343,7 @@ async def main_game_loop(screen, clock):
                                 current_level.reset_towers()
                                 our_tower = current_level.our_tower
                                 enemy_tower = current_level.enemy_tower
+                                our_tower_center = current_level.background.get_width()/2 + current_level.tower_distance / 2
                                 our_tower.csmoke_effects.extend([
                                     CSmokeEffect(our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 - 30,
                                                  our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 + 30,
@@ -379,9 +382,10 @@ async def main_game_loop(screen, clock):
                                     origin_frames=cannon_images["origin"],
                                     beam_frames=cannon_images["beam"],
                                     sweep_fx_frames=cannon_images["sweep_fx"],
-                                    after_fx_frames=cannon_images["after_fx"]
+                                    after_fx_frames=cannon_images["after_fx"],
+                                    frame_duration=80
                                 )
-                                cannon_icon = CannonIcon(ui_pos=(1150, 20), icon_config=icon_cfg)
+                                cannon_icon = CannonIcon(ui_pos=(1150, 20), icon_config=icon_cfg, ui_frame_duration=800)
                                 current_level.reset_spawn_counts()
                                 cats.clear()
                                 souls.clear()
@@ -569,7 +573,7 @@ async def main_game_loop(screen, clock):
             else:
                 progress = 0.0 # 掃射中或後效中，顯示為 0 進度（灰階）
 
-            cannon_icon.draw(screen, cannon.state, progress, cannon.anim_index)
+            cannon_icon.draw(screen, cannon.state, progress, current_time)#cannon_icon.draw(screen, cannon.state, progress, cannon.anim_index)
             pygame.display.flip()
 
             # Victory / Defeat check

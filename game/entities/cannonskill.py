@@ -14,7 +14,8 @@ class CannonSkill:
         origin_frames=None,
         beam_frames=None,
         sweep_fx_frames=None,
-        after_fx_frames=None  # ✅ 改成 2D： [frames_group1, frames_group2]
+        after_fx_frames=None,  # ✅ 改成 2D： [frames_group1, frames_group2]
+        frame_duration=100
     ):
         # --- 基本設定 ---
         self.origin_x, self.origin_y = origin_pos
@@ -50,9 +51,10 @@ class CannonSkill:
         self.cooldown_start = 0
 
         # --- 動畫 ---
-        self.anim_index = 0
+        #self.anim_index = 0
         self.after_x = sweep_start_x
-
+        self.frame_duration = frame_duration # 例如 100ms 代表 1秒 10 張圖
+        self.current_time_ms = 0
     # ======================================================
     # 觸發技能
     # ======================================================
@@ -66,7 +68,8 @@ class CannonSkill:
     # 更新
     # ======================================================
     def update(self, current_time, enemies):
-        self.anim_index += 1
+        #self.anim_index += 1
+        self.current_time_ms = current_time
 
         # ---------- 掃射中 ----------
         if self.state == "sweeping":
@@ -94,6 +97,13 @@ class CannonSkill:
             if current_time - self.cooldown_start >= self.cooldown:
                 self.state = "ready"
 
+    def _get_frame(self, frames):
+        """根據時間計算目前該顯示哪一張圖"""
+        if not frames: return None
+        # 總時間除以每幀時長，再對總幀數取餘數
+        idx = (self.current_time_ms // self.frame_duration) % len(frames)
+        return frames[idx]
+    
     # ======================================================
     # 繪製
     # ======================================================
@@ -114,7 +124,7 @@ class CannonSkill:
     def _draw_origin(self, screen, camera_offset_x):
         if not self.origin_frames:
             return
-        img = self.origin_frames[self.anim_index % len(self.origin_frames)]
+        img = self._get_frame(self.origin_frames)
         rect = img.get_rect(center=(self.origin_x-camera_offset_x, self.origin_y))
         screen.blit(img, rect)
 
@@ -132,7 +142,7 @@ class CannonSkill:
         dy = ty - self.origin_y
         angle = -math.degrees(math.atan2(dy, dx))
 
-        beam = self.beam_frames[self.anim_index % len(self.beam_frames)]
+        beam = self._get_frame(self.beam_frames)#self.beam_frames[self.anim_index % len(self.beam_frames)]
         rotated = pygame.transform.rotate(beam, angle)
 
         rect = rotated.get_rect(midleft=(self.origin_x-camera_offset_x, self.origin_y))
@@ -146,7 +156,7 @@ class CannonSkill:
         tx = self.sweep_start_x + (self.sweep_end_x - self.sweep_start_x) * progress
         ty = self.ground_y
 
-        fx = self.sweep_fx_frames[self.anim_index % len(self.sweep_fx_frames)]
+        fx = self._get_frame(self.sweep_fx_frames)#self.sweep_fx_frames[self.anim_index % len(self.sweep_fx_frames)]
         rect = fx.get_rect(center=(tx-camera_offset_x, ty))
         screen.blit(fx, rect)
 
@@ -161,8 +171,7 @@ class CannonSkill:
             if not group:
                 continue
 
-            idx = self.anim_index % len(group)
-            fx = group[idx]
+            fx = self._get_frame(group)#group[idx]
 
             for offset in (0, -40):
                 rect = fx.get_rect(center=(self.after_x-camera_offset_x + offset, ty))
