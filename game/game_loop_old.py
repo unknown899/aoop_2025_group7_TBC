@@ -3,6 +3,7 @@ import os
 import asyncio
 import pygame
 
+
 # Load reward settings
 from game.rewards import LEVEL_REWARDS
 
