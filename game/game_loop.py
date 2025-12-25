@@ -387,27 +387,18 @@ async def main_game_loop(screen, clock):
                             if key_action_sfx.get('cannot_deploy'):
                                 key_action_sfx['cannot_deploy'].play()
 
-        elif game_state == "gacha":
-            screen.fill((50, 0, 100))
-            title = select_font.render("gacha system devoloping now!", True, (255, 255, 200))
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 200))
-            tip = font.render("敬請期待！", True, (255, 255, 0))
-            screen.blit(tip, (SCREEN_WIDTH // 2 - tip.get_width() // 2, 300))
-            back_rect = pygame.Rect(50, SCREEN_HEIGHT - 100, 200, 60)
-            pygame.draw.rect(screen, (200, 0, 0), back_rect, border_radius=20)
-            back_text = font.render("back", True, (255, 255, 255))
-            screen.blit(back_text, back_text.get_rect(center=back_rect.center))
-            pygame.display.flip()
+        elif game_state == "gacha_developing":
+            from .ui.gacha_ui import draw_gacha_developing_screen
+            new_state = draw_gacha_developing_screen(
+                screen=screen,
+                select_font=select_font,
+                font=font,
+                key_action_sfx=key_action_sfx
+            )
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    return
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    pos = event.pos
-                    if back_rect.collidepoint(pos):
-                        game_state = "main_menu"
-                        if key_action_sfx.get('other_button'):
-                            key_action_sfx['other_button'].play()
+            if new_state == "main_menu":
+                game_state = "main_menu"
+                print("返回主選單 from 轉蛋頁面")
 
         elif game_state == "playing":
 
