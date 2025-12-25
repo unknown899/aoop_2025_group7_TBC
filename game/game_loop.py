@@ -178,6 +178,8 @@ async def main_game_loop(screen, clock):
     intro_duration = 35000
     fade_in_duration = 5000
 
+
+
     while True:
         current_time = pygame.time.get_ticks()
         screen.fill((0, 0, 0))
