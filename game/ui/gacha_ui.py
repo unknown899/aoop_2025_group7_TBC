@@ -1,33 +1,60 @@
-# game/ui/gacha_ui.py
+# ui/gacha_developing.py
+
 import pygame
-import asyncio
-import random
 
-async def gacha_ui(screen, clock):
-    font = pygame.font.Font(None, 48)
-    msg = "點擊抽蛋!"
-    result = None
-    pool = ["貓A", "貓B", "貓C", "SSR神貓"]
+def draw_gacha_developing_screen(
+    screen,
+    select_font,
+    font,
+    key_action_sfx=None
+):
+    """
+    繪製「轉蛋系統開發中」的畫面並處理返回邏輯
+    
+    返回值：
+        new_game_state (str | None): 
+            - 如果玩家點擊「back」或按 ESC，返回 "main_menu"
+            - 否則返回 None
+    """
+    SCREEN_WIDTH = screen.get_width()
+    SCREEN_HEIGHT = screen.get_height()
 
-    while True:
-        screen.fill((255,240,200))
-        screen.blit(font.render(msg, True, (0,0,0)), (500,200))
-        if result:
-            screen.blit(font.render("🎉 你抽到: " + result, True, (0,0,0)), (500,300))
+    # 背景顏色（深紫色）
+    screen.fill((50, 0, 100))
 
-        screen.blit(font.render("⬅ 返回", True, (0,0,0)), (500, 450))
-        pygame.display.flip()
+    # 標題
+    title = select_font.render("Gacha System Developing Now!", True, (255, 255, 200))
+    screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 200))
 
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT:
-                return
-            elif e.type == pygame.MOUSEBUTTONDOWN:
-                mx,my = e.pos
-                if 500 < mx < 800:
-                    if 200 < my < 250:
-                        result = random.choice(pool)
-                    elif 450 < my < 500:
-                        return
+    # 小提示
+    tip = font.render("Have fun!", True, (255, 255, 0))
+    screen.blit(tip, (SCREEN_WIDTH // 2 - tip.get_width() // 2, 300))
 
-        clock.tick(60)
-        await asyncio.sleep(0)
+    # 返回按鈕
+    back_rect = pygame.Rect(50, SCREEN_HEIGHT - 100, 200, 60)
+    pygame.draw.rect(screen, (200, 0, 0), back_rect, border_radius=20)
+    
+    back_text = font.render("Back", True, (255, 255, 255))
+    screen.blit(back_text, back_text.get_rect(center=back_rect.center))
+
+    # 更新畫面
+    pygame.display.flip()
+
+    # 事件處理
+    new_game_state = None
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            # 讓主程式處理退出
+            pygame.event.post(event)
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if back_rect.collidepoint(event.pos):
+                new_game_state = "main_menu"
+                if key_action_sfx and key_action_sfx.get('other_button'):
+                    key_action_sfx['other_button'].play()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                new_game_state = "main_menu"
+                if key_action_sfx and key_action_sfx.get('other_button'):
+                    key_action_sfx['other_button'].play()
+
+    return new_game_state

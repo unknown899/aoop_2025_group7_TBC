@@ -73,14 +73,14 @@ async def main_game_loop(screen, clock):
 
     # 載入背景圖（如果沒有就用純色）
     try:
-        main_menu_bg = pygame.image.load("images/map_main_menu.png").convert_alpha()
+        main_menu_bg = pygame.image.load("./images/map_main_menu.png").convert_alpha()
         main_menu_bg = pygame.transform.scale(main_menu_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
     except:
         main_menu_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         main_menu_bg.fill((20, 40, 60))
 
     try:
-        level_map_bg = pygame.image.load("images/map_level_select.png").convert_alpha()
+        level_map_bg = pygame.image.load("./images/map_level_select.png").convert_alpha()
         level_map_bg = pygame.transform.scale(level_map_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
     except:
         level_map_bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -88,7 +88,7 @@ async def main_game_loop(screen, clock):
 
     # 蝸牛角色
     try:
-        snail_image = pygame.image.load("images/character/snail.png").convert_alpha()
+        snail_image = pygame.image.load("./images/character/snail.png").convert_alpha()
         snail_image = pygame.transform.scale(snail_image, (70, 70))
     except:
         snail_image = pygame.Surface((70, 70), pygame.SRCALPHA)
@@ -101,6 +101,7 @@ async def main_game_loop(screen, clock):
         (600, 250),   # 關卡 2
         (900, 450),   # 關卡 3
         (1100, 300),  # 關卡 4
+        (700, 600),  # 關卡 5
     ]
 
     from .battle_logic import update_battle
@@ -236,7 +237,7 @@ async def main_game_loop(screen, clock):
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
                     elif gacha_rect.collidepoint(pos):
-                        game_state = "gacha"
+                        game_state = "gacha_developing"
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
 
@@ -387,27 +388,18 @@ async def main_game_loop(screen, clock):
                             if key_action_sfx.get('cannot_deploy'):
                                 key_action_sfx['cannot_deploy'].play()
 
-        elif game_state == "gacha":
-            screen.fill((50, 0, 100))
-            title = select_font.render("gacha system devoloping now!", True, (255, 255, 200))
-            screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 200))
-            tip = font.render("敬請期待！", True, (255, 255, 0))
-            screen.blit(tip, (SCREEN_WIDTH // 2 - tip.get_width() // 2, 300))
-            back_rect = pygame.Rect(50, SCREEN_HEIGHT - 100, 200, 60)
-            pygame.draw.rect(screen, (200, 0, 0), back_rect, border_radius=20)
-            back_text = font.render("back", True, (255, 255, 255))
-            screen.blit(back_text, back_text.get_rect(center=back_rect.center))
-            pygame.display.flip()
+        elif game_state == "gacha_developing":
+            from .ui.gacha_ui import draw_gacha_developing_screen
+            new_state = draw_gacha_developing_screen(
+                screen=screen,
+                select_font=select_font,
+                font=font,
+                key_action_sfx=key_action_sfx
+            )
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    return
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    pos = event.pos
-                    if back_rect.collidepoint(pos):
-                        game_state = "main_menu"
-                        if key_action_sfx.get('other_button'):
-                            key_action_sfx['other_button'].play()
+            if new_state == "main_menu":
+                game_state = "main_menu"
+                print("返回主選單 from 轉蛋頁面")
 
         elif game_state == "playing":
 
@@ -659,9 +651,10 @@ async def main_game_loop(screen, clock):
                     if event.key == pygame.K_RETURN:
                         if status == "victory":
                             completed_levels.add(selected_level)
+                            print(selected_level)
                             next_level = selected_level + 1
-                            if next_level < len(levels):
-                                completed_levels.add(next_level)
+                            # if next_level < len(levels):
+                            #     completed_levels.add(next_level)
                             try:
                                 with open(save_file, "w") as f:
                                     json.dump(list(completed_levels), f)
@@ -692,8 +685,8 @@ async def main_game_loop(screen, clock):
                         if status == "victory":
                             completed_levels.add(selected_level)
                             next_level = selected_level + 1
-                            if next_level < len(levels):
-                                completed_levels.add(next_level)
+                            # if next_level < len(levels):
+                            #     completed_levels.add(next_level)
                             try:
                                 with open(save_file, "w") as f:
                                     json.dump(list(completed_levels), f)

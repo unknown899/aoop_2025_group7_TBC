@@ -30,4 +30,41 @@ LEVEL_REWARDS = {
     },
     # Add rewards for more levels here if needed
     # 2: { ... },
+    2:{  # Level 3
+        "base_gold": 400,
+        "base_souls": 40,
+        "speed_bonus": {
+            "threshold": 420,       # Clear within 7 minutes
+            "gold": 250,
+            "souls": 25
+        },
+        "first_clear": {
+            "gold": 500,
+            "souls": 70,
+            # "unlock_cat": "tank_cat"
+        }
+    },
+    3:{  # Level 4
+        "base_gold": 500,
+        "base_souls": 50,
+        "speed_bonus": {
+            "threshold": 480,       # Clear within 8 minutes
+            "gold": 300,
+            "souls": 30
+        },
+        "first_clear": {
+            "gold": 600,
+            "souls": 80,
+            # "unlock_cat": "air_cat"
+        }
+    },
+    4: {  # Level 5
+        "base_gold": 600,
+        "base_souls": 60,
+        "speed_bonus": {
+            "threshold": 540,       # Clear within 9 minutes
+            "gold": 350,
+            "souls": 35
+        }
+    },
 }
