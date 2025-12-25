@@ -75,8 +75,8 @@ async def main_game_loop(screen, clock):
 
     from .battle_logic import update_battle
     from .ui import draw_level_selection, draw_game_ui, draw_pause_menu, draw_end_screen, draw_intro_screen, draw_ending_animation
-    from .entities import cat_types, cat_costs, cat_cooldowns, levels, enemy_types, YManager, CSmokeEffect, load_cat_images, OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy, EnemySpawner
-    from game.constants import csmoke_images1, csmoke_images2
+    from .entities import cat_types, cat_costs, cat_cooldowns, levels, enemy_types, YManager, CSmokeEffect, load_cat_images, OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy, EnemySpawner, CannonSkill
+    from game.constants import csmoke_images1, csmoke_images2, cannon_images
 
     selected_level = 0
     selected_cats = list(cat_types.keys())[:2]
@@ -116,6 +116,7 @@ async def main_game_loop(screen, clock):
     shockwave_effects = []
     our_tower = None
     enemy_tower = None
+    cannon = None
     last_spawn_time = {cat_type: 0 for cat_type in cat_types}
     current_budget = 1000
     last_budget_increase_time = -333
@@ -282,6 +283,16 @@ async def main_game_loop(screen, clock):
                                 elif mode == "ml":
                                     strategy = MLSpawnStrategy()
                                 enemy_spawner = EnemySpawner(strategy)
+                                cannon = CannonSkill(
+                                    origin_pos=(our_tower_center, 420),
+                                    sweep_start_x=300,
+                                    sweep_end_x=1000,
+                                    ground_y=520,
+                                    origin_frames=cannon_images["origin"],
+                                    beam_frames=cannon_images["beam"],
+                                    sweep_fx_frames=cannon_images["sweep_fx"],
+                                    after_fx_frames=cannon_images["after_fx"]
+                                )
                                 current_level.reset_spawn_counts()
                                 cats.clear()
                                 souls.clear()
@@ -358,6 +369,16 @@ async def main_game_loop(screen, clock):
                                 elif mode == "ml":
                                     strategy = MLSpawnStrategy()
                                 enemy_spawner = EnemySpawner(strategy)
+                                cannon = CannonSkill(
+                                    origin_pos=(our_tower_center, 420),
+                                    sweep_start_x=300,
+                                    sweep_end_x=1000,
+                                    ground_y=520,
+                                    origin_frames=cannon_images["origin"],
+                                    beam_frames=cannon_images["beam"],
+                                    sweep_fx_frames=cannon_images["sweep_fx"],
+                                    after_fx_frames=cannon_images["after_fx"]
+                                )
                                 current_level.reset_spawn_counts()
                                 cats.clear()
                                 souls.clear()

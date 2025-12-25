@@ -4,6 +4,7 @@
 from .cat import Cat
 from .enemy import Enemy
 from .level import Level
+from .cannonskill import CannonSkill
 from .ymanager import YManager
 from .enemyspawner import EnemySpawner
 from .spawnstrategies import OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy
@@ -29,9 +30,9 @@ from .cat_data import cat_types, cat_costs, cat_cooldowns, load_cat_images
 from .enemy_data import enemy_types
 from .level_data import levels
 
-# __all__ 是可選的，但推薦寫清楚導出內容
+# __all__ 是可選的，但推薦寫清楚導出內容(可以不用寫all)
 __all__ = [
-    "Cat", "Enemy", "Level",
+    "Cat", "Enemy", "Level","CannonSkill",
     "cat_types", "cat_costs", "cat_cooldowns",
     "enemy_types", "levels"
 ]
