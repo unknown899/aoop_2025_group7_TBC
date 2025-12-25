@@ -41,7 +41,7 @@ class CannonIcon:
             img = self.ready_frames[idx]
             screen.blit(img, self.rect)
         else:
-            # 狀態為 Sweeping, After 或 Cooldown 時：顯示灰階底圖 + 彩色注水
+            # 狀態為 Sweeping, After 或 Cooldown 時：顯示灰階底圖 + 彩色注水(但其實只有cooldown和ready才有）
             # 1. 先畫灰色底圖
             screen.blit(self.gray_img, self.rect)
             
