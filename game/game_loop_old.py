@@ -475,12 +475,12 @@ async def main_game_loop(screen, clock):
                     else:
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
-                    keys = pygame.key.get_pressed()
-                    if keys[pygame.K_LEFT]:
-                        camera_offset_x -= 10
-                    if keys[pygame.K_RIGHT]:
-                        camera_offset_x += 10
-                    camera_offset_x = max(0, min(camera_offset_x, bg_width - SCREEN_WIDTH))
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                camera_offset_x -= 10
+            if keys[pygame.K_RIGHT]:
+                camera_offset_x += 10
+            camera_offset_x = max(0, min(camera_offset_x, bg_width - SCREEN_WIDTH))
 
             # Budget increase
             if current_time - last_budget_increase_time >= 333:
