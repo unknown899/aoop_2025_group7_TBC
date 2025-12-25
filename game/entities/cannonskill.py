@@ -4,18 +4,17 @@ import math
 class CannonSkill:
     def __init__(
         self,
-        origin_pos,                 # (x, y) 砲口中心 level_tower位置決定
-        sweep_start_x,              # 掃射起點（地面 x） level_tower位置決定
-        sweep_end_x,                # 掃射終點（地面 x） 遊戲開始時根據砲等級決定
-        ground_y,                   # 地面 y     level_tower位置決定
-        sweep_duration=1200,        # 掃射時間（ms） 遊戲開始時根據砲等級決定
-        cooldown=5000,              # 冷卻時間（ms） 遊戲開始時根據砲等級決定
-        damage=300,                 # 傷害 遊戲開始時根據砲等級決定
-
-        origin_frames=None,         # origin.png 動畫 same
-        beam_frames=None,           # beam.png（水平）same
-        sweep_fx_frames=None,       # 掃射地面 splash（掃射中）same
-        after_fx_frames=None        # 掃射後沿地面移動特效 same
+        origin_pos,
+        sweep_start_x,
+        sweep_end_x,
+        ground_y,
+        sweep_duration=1200,
+        cooldown=5000,
+        damage=300,
+        origin_frames=None,
+        beam_frames=None,
+        sweep_fx_frames=None,
+        after_fx_frames=None  # ✅ 改成 2D： [frames_group1, frames_group2]
     ):
         # --- 基本設定 ---
         self.origin_x, self.origin_y = origin_pos
@@ -30,7 +29,20 @@ class CannonSkill:
         self.origin_frames = origin_frames or []
         self.beam_frames = beam_frames or []
         self.sweep_fx_frames = sweep_fx_frames or []
-        self.after_fx_frames = after_fx_frames or []
+
+        # ✅ 讓 after_fx_frames 永遠是「二維」
+        # 允許你傳：
+        # 1) None
+        # 2) [group1_frames, group2_frames]
+        # 3) 單一 group（舊寫法） -> 會自動包成 [group]
+        if after_fx_frames is None:
+            self.after_fx_frames = []
+        else:
+            # 如果傳進來是「一維 frames(裡面是 Surface)」，就包成二維
+            if len(after_fx_frames) > 0 and isinstance(after_fx_frames[0], pygame.Surface):
+                self.after_fx_frames = [after_fx_frames]
+            else:
+                self.after_fx_frames = after_fx_frames
 
         # --- 狀態 ---
         self.state = "ready"
@@ -143,12 +155,18 @@ class CannonSkill:
             return
 
         ty = self.ground_y
-        fx = self.after_fx_frames[self.anim_index % len(self.after_fx_frames)]
 
-        for offset in (0, -40):
-            rect = fx.get_rect(center=(self.after_x + offset, ty))
-            screen.blit(fx, rect)
+        # ✅ 各組用各自的 idx（依各組自己的長度循環）
+        for group in self.after_fx_frames:
+            if not group:
+                continue
 
+            idx = self.anim_index % len(group)
+            fx = group[idx]
+
+            for offset in (0, -40):
+                rect = fx.get_rect(center=(self.after_x + offset, ty))
+                screen.blit(fx, rect)
     # ======================================================
     # 傷害計算（只在掃射結束）
     # ======================================================
