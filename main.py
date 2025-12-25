@@ -2,7 +2,7 @@ import asyncio
 import pygame
 import sys
 # 從 game 包中導入 game_loop_old 模組
-from game.game_loop_old import main_game_loop
+from game.game_loop import main_game_loop
 
 async def main():
     pygame.init()
