@@ -14,3 +14,10 @@ cannon_images = load_cannonskill_images(
     after_fx_scale=1.0,
     alpha=255
 )
+ready, full, gray = load_cannonicon_image(scale=1.0)
+icon_cfg = {
+    'ready': [ready[0], ready[1]], # 動畫
+    'full': full,             # 原圖
+    'gray': gray,           # 你準備好的灰階圖
+    'bounds': (15, 85)                  # 假設非透明區域在 Y=15~85 之間
+}
