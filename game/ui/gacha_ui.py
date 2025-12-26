@@ -68,29 +68,23 @@ def draw_gacha_screen(
     font,
     gacha_bg,
     gacha_anim_player,
+    gacha_is_anim_playing,
+    gacha_result,
     key_action_sfx=None
 ):
     from ..gacha_manager import perform_gacha
     from ..constants import GACHA_COST_GOLD, GACHA_COST_SOULS, RESOURCE_FILE
 
-    # -------------------------
-    # 狀態初始化（只做一次）
-    # -------------------------
-    if not hasattr(draw_gacha_screen, "is_anim_playing"):
-        draw_gacha_screen.is_anim_playing = False
-        draw_gacha_screen.gacha_result = None
-
     SCREEN_WIDTH = screen.get_width()
     SCREEN_HEIGHT = screen.get_height()
 
     # -------------------------
-    # 讀取玩家資源
+    # 讀取資源
     # -------------------------
     try:
         with open(RESOURCE_FILE, "r", encoding="utf-8") as f:
             player_data = json.load(f)
-    except Exception as e:
-        print(f"[Gacha] Resource load failed: {e}")
+    except:
         player_data = {"gold": 0, "souls": 0}
 
     # -------------------------
@@ -98,76 +92,48 @@ def draw_gacha_screen(
     # -------------------------
     screen.blit(gacha_bg, (0, 0))
 
-    # 資源顯示
-    gold_text = font.render(
-        f"Gold: {player_data.get('gold', 0)}", True, (255, 215, 0)
-    )
-    soul_text = font.render(
-        f"Souls: {player_data.get('souls', 0)}", True, (200, 100, 255)
-    )
+    gold_text = font.render(f"Gold: {player_data['gold']}", True, (255, 215, 0))
+    soul_text = font.render(f"Souls: {player_data['souls']}", True, (200, 100, 255))
     screen.blit(gold_text, (SCREEN_WIDTH - 250, 40))
     screen.blit(soul_text, (SCREEN_WIDTH - 250, 80))
 
-    # -------------------------
     # 轉蛋按鈕
-    # -------------------------
     btn_rect = pygame.Rect(
         SCREEN_WIDTH // 2 - 125,
         SCREEN_HEIGHT // 2 - 50,
         250,
         100
     )
-
     pygame.draw.rect(screen, (70, 40, 120), btn_rect, border_radius=15)
     pygame.draw.rect(screen, (255, 255, 255), btn_rect, 3, border_radius=15)
 
     label = font.render("Roll Single", True, (255, 255, 255))
-    cost = font.render(
-        f"{GACHA_COST_GOLD}G / {GACHA_COST_SOULS}S",
-        True,
-        (200, 200, 200)
-    )
+    screen.blit(label, label.get_rect(center=btn_rect.center))
 
-    screen.blit(
-        label,
-        label.get_rect(center=(btn_rect.centerx, btn_rect.centery - 20))
-    )
-    screen.blit(
-        cost,
-        cost.get_rect(center=(btn_rect.centerx, btn_rect.centery + 20))
-    )
-
-    # -------------------------
-    # 返回按鈕
-    # -------------------------
+    # 返回
     back_rect = pygame.Rect(50, SCREEN_HEIGHT - 100, 150, 60)
     pygame.draw.rect(screen, (150, 50, 50), back_rect, border_radius=15)
     back_text = font.render("Back", True, (255, 255, 255))
     screen.blit(back_text, back_text.get_rect(center=back_rect.center))
 
     # -------------------------
-    # 播放轉蛋動畫（如果有）
+    # 播放動畫
     # -------------------------
     current_time = pygame.time.get_ticks()
-
-    if draw_gacha_screen.is_anim_playing:
+    if gacha_is_anim_playing:
         still_playing = gacha_anim_player.draw(screen, current_time)
         if not still_playing:
-            draw_gacha_screen.is_anim_playing = False
+            gacha_is_anim_playing = False
 
     # -------------------------
-    # 顯示抽卡結果（動畫播完）
+    # 顯示結果
     # -------------------------
-    if (not draw_gacha_screen.is_anim_playing and
-        draw_gacha_screen.gacha_result):
-
-        msg = draw_gacha_screen.gacha_result["msg"]
-        result_text = select_font.render(msg, True, (255, 255, 0))
+    if not gacha_is_anim_playing and gacha_result:
+        msg = gacha_result["msg"]
+        text = select_font.render(msg, True, (255, 255, 0))
         screen.blit(
-            result_text,
-            result_text.get_rect(
-                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 150)
-            )
+            text,
+            text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 140))
         )
 
     pygame.display.flip()
@@ -181,39 +147,23 @@ def draw_gacha_screen(
         if event.type == pygame.QUIT:
             new_game_state = "quit"
 
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if back_rect.collidepoint(event.pos):
+                new_game_state = "main_menu"
+
+            elif btn_rect.collidepoint(event.pos):
+                if gacha_is_anim_playing:
+                    continue
+
+                success, result = perform_gacha()
+                if success:
+                    gacha_result = result
+                    gacha_is_anim_playing = True
+                    gacha_anim_player.start(pygame.time.get_ticks())
+
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 new_game_state = "main_menu"
 
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            # 返回
-            if back_rect.collidepoint(event.pos):
-                new_game_state = "main_menu"
-                if key_action_sfx and key_action_sfx.get("other_button"):
-                    key_action_sfx["other_button"].play()
-
-            # 抽卡
-            elif btn_rect.collidepoint(event.pos):
-                # 動畫播放中不能抽
-                if draw_gacha_screen.is_anim_playing:
-                    continue
-
-                success, result = perform_gacha()
-
-                if success:
-                    draw_gacha_screen.gacha_result = result
-
-                    gacha_anim_player.start(
-                        pygame.time.get_ticks()
-                    )
-                    draw_gacha_screen.is_anim_playing = True
-
-                    if key_action_sfx and key_action_sfx.get("laser"):
-                        key_action_sfx["laser"].play()
-                else:
-                    if key_action_sfx and key_action_sfx.get("cannot_deploy"):
-                        key_action_sfx["cannot_deploy"].play()
-
-                print(f"[Gacha] {result['msg'] if success else 'Failed'}")
-
-    return new_game_state
+    # 🔴 重點：把狀態「傳回去」
+    return new_game_state, gacha_is_anim_playing, gacha_result
