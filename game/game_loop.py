@@ -510,17 +510,14 @@ async def main_game_loop(screen, clock):
                 game_state = "main_menu"
                 print("返回主選單 from 轉蛋頁面")
         elif game_state == "gacha":
-            # 確保你已經載入了 gacha_background 圖片
-            from .ui.gacha_ui import draw_gacha_screen
-            
+            from .ui.gacha_ui import draw_gacha_screen # 確保路徑對
             new_state = draw_gacha_screen(
                 screen=screen,
-                font=font, # 你的普通字體
-                select_font=select_font, # 你的標題字體
-                gacha_bg=gacha_background, # 預先載好的 Surface
-                key_action_sfx=key_action_sfx # 你的音效字典
+                select_font=select_font,
+                font=font,
+                gacha_bg=gacha_background, # 這是你 load_single_image 載入的圖
+                key_action_sfx=key_action_sfx
             )
-            
             if new_state == "main_menu":
                 game_state = "main_menu"
         elif game_state == "playing":
