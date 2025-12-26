@@ -4,6 +4,7 @@ import json
 import os
 import asyncio
 import pygame
+import random
 from game.rewards import LEVEL_REWARDS, draw_reward
 
 # Delay time (ms)
@@ -12,6 +13,9 @@ DELAY_TIME = 2000
 # Player files
 PLAYER_RESOURCES_FILE = "data/player_resources.json"
 PLAYER_UNLOCKED_CATS_FILE = "data/player_unlocked_cats.json"
+FIRST_CLEAR_CLAIMED_FILE = "data/first_clear_rewards.json"
+WALLET_LEVEL_FILE = "data/wallet_level.json"
+WALLET_UPGRADE_TABLE_FILE = "data/wallet_upgrade_table.json"
 
 # Global variables
 unlocked_cats = {"basic", "eraser"}
@@ -21,23 +25,77 @@ selected_cats = []
 selected_level = 0
 game_state = "intro"
 
-# 在其他載入存檔之後新增
-FIRST_CLEAR_CLAIMED_FILE = "data/first_clear_rewards.json"
-claimed_first_clear = {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []], "4": [[], []]}  # 預設結構
+# first_clear 領取記錄
+claimed_first_clear = {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []], "4": [[], []]}
 
+# 錢包升級系統
+wallet_level = 1
+wallet_upgrade_table = []
+
+# 目前戰鬥中的錢包參數（會隨升級即時更新）
+total_budget_limitation = 6000
+budget_rate = 20
+
+# 載入 first_clear 記錄
 try:
     if os.path.exists(FIRST_CLEAR_CLAIMED_FILE):
         with open(FIRST_CLEAR_CLAIMED_FILE, "r") as f:
             loaded = json.load(f)
             if isinstance(loaded, dict):
-                claimed_first_clear = {str(k): v for k, v in loaded.items()}  # 確保 key 是 str
+                claimed_first_clear = {str(k): v for k, v in loaded.items()}
 except Exception as e:
     print(f"Warning: failed to load first_clear claimed: {e}")
+
+# 載入錢包升級表
+try:
+    if os.path.exists(WALLET_UPGRADE_TABLE_FILE):
+        with open(WALLET_UPGRADE_TABLE_FILE, "r", encoding="utf-8") as f:
+            wallet_upgrade_table = json.load(f)
+    else:
+        print("Wallet upgrade table not found, using default")
+        wallet_upgrade_table = [
+            {"level": 1, "max_budget": 6000, "budget_rate": 20, "upgrade_cost": 280},
+            {"level": 2, "max_budget": 7500, "budget_rate": 25, "upgrade_cost": 560},
+            {"level": 3, "max_budget": 9000, "budget_rate": 30, "upgrade_cost": 840},
+            {"level": 4, "max_budget": 10500, "budget_rate": 35, "upgrade_cost": 1120},
+            {"level": 5, "max_budget": 12000, "budget_rate": 40, "upgrade_cost": 1400},
+            {"level": 6, "max_budget": 13500, "budget_rate": 45, "upgrade_cost": 1680},
+            {"level": 7, "max_budget": 15000, "budget_rate": 50, "upgrade_cost": 1960},
+            {"level": 8, "max_budget": 16500, "budget_rate": 55, "upgrade_cost": 0}
+        ]
+except Exception as e:
+    print(f"Error loading wallet upgrade table: {e}")
+    wallet_upgrade_table = []
+
+# 載入玩家錢包等級
+try:
+    if os.path.exists(WALLET_LEVEL_FILE):
+        with open(WALLET_LEVEL_FILE, "r") as f:
+            wallet_level = json.load(f)
+            if not isinstance(wallet_level, int) or wallet_level < 1 or wallet_level > len(wallet_upgrade_table):
+                wallet_level = 1
+except Exception as e:
+    print(f"Warning: failed to load wallet level: {e}")
+    wallet_level = 1
+
+# 更新錢包參數
+def update_wallet_stats():
+    global total_budget_limitation, budget_rate
+    if wallet_upgrade_table and wallet_level <= len(wallet_upgrade_table):
+        stats = wallet_upgrade_table[wallet_level - 1]
+        total_budget_limitation = stats["max_budget"]
+        budget_rate = stats["budget_rate"]
+    else:
+        total_budget_limitation = 16500
+        budget_rate = 55
+
+update_wallet_stats()
 
 async def main_game_loop(screen, clock):
     global unlocked_cats, completed_levels, player_resources
     global selected_cats, selected_level, game_state, intro_start_time
     global current_bgm_path, boss_music_active, boss_shockwave_played
+    global wallet_level, total_budget_limitation, budget_rate
 
     FPS = 60
     font = pygame.font.SysFont(None, 25)
@@ -99,8 +157,6 @@ async def main_game_loop(screen, clock):
     last_spawn_time = {}
     current_budget = 0
     last_budget_increase_time = 0
-    total_budget_limitation = 16500
-    budget_rate = 33
     status = None
     level_start_time = 0
     cat_y_manager = YManager(base_y=532, min_y=300, max_slots=15)
@@ -155,8 +211,6 @@ async def main_game_loop(screen, clock):
     if os.path.exists("audio/TBC/010.ogg"):
         cat_spawn_sfx['default'] = pygame.mixer.Sound("audio/TBC/010.ogg")
         cat_spawn_sfx['default'].set_volume(0.7)
-    else:
-        print("Warning: 'audio/TBC/010.ogg' not found, cat spawn sound will not play.")
 
     victory_sfx = pygame.mixer.Sound("audio/TBC/008.ogg") if os.path.exists("audio/TBC/008.ogg") else None
     defeat_sfx = pygame.mixer.Sound("audio/TBC/009.ogg") if os.path.exists("audio/TBC/009.ogg") else None
@@ -239,6 +293,10 @@ async def main_game_loop(screen, clock):
             resource_surf = select_font.render(resource_text, True, (255, 215, 0))
             screen.blit(resource_surf, (50, 30))
 
+            # 顯示錢包等級
+            # wallet_info = select_font.render(f"錢包 Lv.{wallet_level} (戰鬥中可升級)", True, (200, 200, 255))
+            # screen.blit(wallet_info, (50, 80))
+
             pygame.display.flip()
 
             for event in pygame.event.get():
@@ -273,14 +331,13 @@ async def main_game_loop(screen, clock):
                     key_action_sfx['other_button'].play()
             if selected_idx is not None:
                 selected_level = selected_idx
-                selected_cats = []  # 清空，讓 cat_selection 重新預選
+                selected_cats = []
                 game_state = "cat_selection"
                 if key_action_sfx.get('other_button'):
                     key_action_sfx['other_button'].play()
                 print(f"選擇關卡 {selected_level + 1}: {levels[selected_level].name}")
 
         elif game_state == "cat_selection":
-            # 使用 draw_level_selection（傳入 unlocked_cats）
             cat_rects, reset_rect, quit_rect, start_rect = draw_level_selection(
                 screen=screen,
                 levels=levels,
@@ -321,9 +378,11 @@ async def main_game_loop(screen, clock):
                         player_resources = {"gold": 0, "souls": 0}
                         unlocked_cats = {"basic", "eraser"}
                         selected_cats = []
-                        claimed_first_clear = {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []], "4": [[], []]} 
+                        wallet_level = 1
+                        update_wallet_stats()
+                        claimed_first_clear = {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []], "4": [[], []]}
 
-                        for path in [save_file, PLAYER_RESOURCES_FILE, PLAYER_UNLOCKED_CATS_FILE, FIRST_CLEAR_CLAIMED_FILE]:
+                        for path in [save_file, PLAYER_RESOURCES_FILE, PLAYER_UNLOCKED_CATS_FILE, FIRST_CLEAR_CLAIMED_FILE, WALLET_LEVEL_FILE]:
                             if os.path.exists(path):
                                 os.remove(path)
 
@@ -333,6 +392,8 @@ async def main_game_loop(screen, clock):
                             json.dump(list(unlocked_cats), f, indent=4)
                         with open(FIRST_CLEAR_CLAIMED_FILE, "w") as f:
                             json.dump(claimed_first_clear, f, indent=4)
+                        with open(WALLET_LEVEL_FILE, "w") as f:
+                            json.dump(wallet_level, f)
 
                         game_state = "intro"
                         intro_start_time = pygame.time.get_ticks()
@@ -350,7 +411,8 @@ async def main_game_loop(screen, clock):
                             current_level.reset_towers()
                             our_tower = current_level.our_tower
                             enemy_tower = current_level.enemy_tower
-                            our_tower_center = current_level.background.get_width()/2 + current_level.tower_distance / 2
+
+                            our_tower_center = current_level.background.get_width() / 2 + current_level.tower_distance / 2
                             our_tower.csmoke_effects.extend([
                                 CSmokeEffect(our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 - 30,
                                              our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 + 30,
@@ -383,36 +445,37 @@ async def main_game_loop(screen, clock):
                                 strategy = MLSpawnStrategy()
                             enemy_spawner = EnemySpawner(strategy)
                             current_level.reset_spawn_counts()
+
                             cannon = CannonSkill(
-                                    origin_pos=(our_tower_center-our_tower.width//4-10, 205),
-                                    sweep_start_x=our_tower_center-our_tower.width//2,
-                                    range=2600,
-                                    ground_y=460,
-                                    sweep_speed=2.5,
-                                    cooldown=5000,
-                                    damage=300,
-                                    origin_frames=cannon_images["origin"],
-                                    beam_frames=cannon_images["beam"],
-                                    sweep_fx_frames=cannon_images["sweep_fx"],
-                                    after_fx_frames=cannon_images["after_fx"],
-                                    frame_duration1=80,# for sweep_fx
-                                    frame_duration2=100,# for after_fx
-                                )
+                                origin_pos=(our_tower_center - our_tower.width // 4 - 10, 205),
+                                sweep_start_x=our_tower_center - our_tower.width // 2,
+                                range=2600,
+                                ground_y=460,
+                                sweep_speed=2.5,
+                                cooldown=5000,
+                                damage=300,
+                                origin_frames=cannon_images["origin"],
+                                beam_frames=cannon_images["beam"],
+                                sweep_fx_frames=cannon_images["sweep_fx"],
+                                after_fx_frames=cannon_images["after_fx"],
+                                frame_duration1=80,
+                                frame_duration2=100,
+                            )
                             cannon_icon = CannonIcon(ui_pos=(1090, 420), icon_config=icon_cfg, ui_frame_duration=100)
+
                             cats = []
                             enemies = []
                             souls = []
                             shockwave_effects = []
+
+                            wallet_level = 1
+                            update_wallet_stats()
+
                             current_budget = current_level.initial_budget
                             last_budget_increase_time = current_time - 333
                             last_spawn_time = {cat_type: 0 for cat_type in cat_types}
                             level_start_time = current_time
                             status = None
-                            clear_time_seconds = 0
-                            earned_rewards = []
-                            total_gold_earned = 0
-                            total_souls_earned = 0
-                            is_first_completion = selected_level not in completed_levels
 
                             if current_level.music_path and os.path.exists(current_level.music_path):
                                 pygame.mixer.music.load(current_level.music_path)
@@ -446,10 +509,11 @@ async def main_game_loop(screen, clock):
             current_level = levels[selected_level]
             bg_width = current_level.background.get_width()
 
-            # 繪製遊戲 UI（返回 pause_rect 與更新後的 camera_offset_x）
-            pause_rect, button_rects, camera_offset_x = draw_game_ui(
+            # 繪製遊戲 UI
+            pause_rect, button_rects, camera_offset_x, upgrade_rect = draw_game_ui(
                 screen, current_level, current_budget, enemy_tower, current_time, level_start_time,
-                selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x
+                selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x,
+                wallet_level, wallet_upgrade_table, player_resources
             )
 
             # Boss 登場邏輯
@@ -476,15 +540,12 @@ async def main_game_loop(screen, clock):
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = event.pos
 
-                    # 點擊大炮（cannon）圖標
+                    # 點擊大炮圖標
                     if cannon_icon.is_clicked(pos):
                         if cannon.state == "ready":
                             cannon.activate(current_time)
-                            # sfx_laser.play()  # 註解中，需定義 sfx_laser
-                        # else:
-                        #     sfx_fail.play()  # 註解中，需定義 sfx_fail
 
-                    # 點擊暫停按鈕
+                    # 點擊暫停
                     if pause_rect.collidepoint(pos):
                         game_state = "paused"
                         pygame.mixer.music.pause()
@@ -515,7 +576,29 @@ async def main_game_loop(screen, clock):
                             else:
                                 if key_action_sfx.get('cannot_deploy'):
                                     key_action_sfx['cannot_deploy'].play()
-                                print(f"Cannot spawn '{cat_type}': {'Insufficient gold' if current_budget < cost else 'On cooldown'}")
+
+                    # 點擊錢包升級按鈕
+                    if wallet_level < len(wallet_upgrade_table) and upgrade_rect.collidepoint(pos):
+                        upgrade_cost = wallet_upgrade_table[wallet_level]["upgrade_cost"]
+                        if current_budget >= upgrade_cost:
+                            current_budget -= upgrade_cost
+                            wallet_level += 1
+                            update_wallet_stats()
+
+                            try:
+                                with open(WALLET_LEVEL_FILE, "w") as f:
+                                    json.dump(wallet_level, f)
+                                with open(PLAYER_RESOURCES_FILE, "w") as f:
+                                    json.dump(player_resources, f, indent=4)
+                            except Exception as e:
+                                print(f"Wallet upgrade save error: {e}")
+
+                            print(f"戰鬥中錢包升級成功！現在 Lv.{wallet_level}")
+                            if key_action_sfx.get('other_button'):
+                                key_action_sfx['other_button'].play()
+                        else:
+                            if key_action_sfx.get('cannot_deploy'):
+                                key_action_sfx['cannot_deploy'].play()
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key in cat_key_map:
@@ -541,12 +624,11 @@ async def main_game_loop(screen, clock):
                         else:
                             if key_action_sfx.get('cannot_deploy'):
                                 key_action_sfx['cannot_deploy'].play()
-                            print(f"Cannot spawn '{cat_type}': {'Insufficient gold' if current_budget < cost else 'On cooldown'}")
                     else:
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
 
-            # 處理畫面左右滑動
+            # 畫面滑動
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
                 camera_offset_x -= 10
