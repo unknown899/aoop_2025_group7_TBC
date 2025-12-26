@@ -155,6 +155,9 @@ def draw_gacha_screen(
             cat_img = pygame.image.load(
                 f"./cat_folder/{gacha_result['won_id']}/cat_gacha.png"
             ).convert_alpha()
+
+            new_size = (int(cat_img.get_width() * 600/cat_img.get_height()), 600)
+            cat_img = pygame.transform.scale(cat_img, new_size)
             
             cat_rect = cat_img.get_rect(
                 center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)

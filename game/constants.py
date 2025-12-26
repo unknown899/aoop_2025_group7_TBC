@@ -77,7 +77,7 @@ frame_files = [
 frame_files_sorted = sorted(frame_files, key=_frame_index)
 
 frame_paths = [os.path.join(GACHA_FRAMES_DIR, f) for f in frame_files_sorted]
-print(frame_paths)
+#print(frame_paths)
 
 gacha_anim_player = GachaAnimationPlayer(
     frame_paths=frame_paths,
