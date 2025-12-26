@@ -119,8 +119,7 @@ def draw_gacha_screen(
     # 注意：這裡會消耗掉這一幀的所有事件
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.event.post(event)
-        
+            new_game_state = "quit"
         elif event.type == pygame.MOUSEBUTTONDOWN:
             # 點擊返回
             if back_rect.collidepoint(event.pos):

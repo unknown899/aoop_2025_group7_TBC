@@ -526,6 +526,8 @@ async def main_game_loop(screen, clock):
             )
             if new_state == "main_menu":
                 game_state = "main_menu"
+            elif new_state == "quit":
+                return
         elif game_state == "playing":
             current_level = levels[selected_level]
             bg_width = current_level.background.get_width()
