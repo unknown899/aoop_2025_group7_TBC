@@ -95,10 +95,10 @@ def draw_gacha_screen(
     # -------------------------
     screen.blit(gacha_bg, (0, 0))
 
-    gold_text = font.render(f"Gold: {player_data['gold']}", True, (255, 215, 0))
-    soul_text = font.render(f"Souls: {player_data['souls']}", True, (200, 100, 255))
-    screen.blit(gold_text, (SCREEN_WIDTH - 250, 40))
-    screen.blit(soul_text, (SCREEN_WIDTH - 250, 80))
+    gold_text = select_font.render(f"Gold: {player_data['gold']}", True, (255, 215, 0))
+    soul_text = select_font.render(f"Souls: {player_data['souls']}", True, (200, 100, 255))
+    screen.blit(gold_text, (SCREEN_WIDTH - 610, 553))
+    screen.blit(soul_text, (SCREEN_WIDTH - 300, 553))
 
     # 轉蛋按鈕
     btn_rect = pygame.Rect(
@@ -156,7 +156,7 @@ def draw_gacha_screen(
                 f"./cat_folder/{gacha_result['won_id']}/cat_gacha.png"
             ).convert_alpha()
 
-            new_size = (int(cat_img.get_width() * 600/cat_img.get_height()), 600)
+            new_size = (600, int(cat_img.get_height() * 600/cat_img.get_width()))
             cat_img = pygame.transform.scale(cat_img, new_size)
             
             cat_rect = cat_img.get_rect(
