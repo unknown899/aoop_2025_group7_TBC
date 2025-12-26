@@ -347,6 +347,17 @@ async def main_game_loop(screen, clock):
                 current_bgm_path = selection_music
 
             from .ui.battle_menu import draw_battle_map_selection
+            claimed_first_clear =  {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []], "4": [[], []]}
+            try:
+                if os.path.exists(FIRST_CLEAR_CLAIMED_FILE):
+                    with open(FIRST_CLEAR_CLAIMED_FILE, "r") as f:
+                        loaded = json.load(f)
+                        if isinstance(loaded, dict):
+                            claimed_first_clear = {str(k): v for k, v in loaded.items()}  # 確保 key 是 str
+            except Exception as e:
+                print(f"Warning: failed to load first_clear claimed: {e}")
+
+            
             selected_idx, new_state = draw_battle_map_selection(
                 screen=screen,
                 level_map_bg=level_map_bg,
@@ -355,8 +366,12 @@ async def main_game_loop(screen, clock):
                 completed_levels=completed_levels,
                 player_pos=player_map_pos,
                 player_speed=6,
-                select_font=select_font
+                select_font=select_font,
+                claimed_first_clear=claimed_first_clear,  # 新增
+
             )
+            if new_state == "quit":
+                return
             if new_state == "main_menu":
                 game_state = "main_menu"
                 pygame.mixer.music.stop()
