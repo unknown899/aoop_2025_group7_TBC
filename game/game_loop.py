@@ -666,7 +666,7 @@ async def main_game_loop(screen, clock):
                     except Exception as e:
                         print(f"Warning: failed to load first_clear claimed: {e}")
 
-                    is_get = []
+                    
                     for idx, fc in enumerate(reward_data.get("first_clear", [])):
                         # reward_type = fc.get("type")
                         chance = fc.get("weight", 0)
@@ -689,25 +689,25 @@ async def main_game_loop(screen, clock):
                             
                             claimed_first_clear[str(selected_level)][0].append(idx)
 
-                            # is_get.append(idx)
                     
-                    # 4. speed_bonus：根據時間獨立給（僅第一次通關）
+                    # 3. speed_bonus：根據時間獨立給（僅第一次通關）
                     for idx, fc in enumerate(reward_data.get("speed_bonus", [])):
                         time_limit = fc.get("threshold", 0)
-                        if clear_time_seconds <= time_limit and claimed_first_clear[str(selected_level)][1]:
-                            reward_idx = fc.get("reward")
-                            for r in reward_idx:
-                                g = r.get("gold", 0)
-                                s = r.get("souls", 0)
-                                total_gold_earned += g
-                                total_souls_earned += s
-                                if g or s:
-                                    earned_rewards.append(f"Speed Bonus: +{g} Gold + {s} Souls")
-                                unlock = r.get("unlock_cat")
-                                if unlock and unlock not in unlocked_cats:
-                                    unlocked_cats.add(unlock)
-                                    newly_unlocked_cat = unlock
-                                    earned_rewards.append(f"New Cat Unlocked: {unlock.capitalize()} Cat")
+                        if clear_time_seconds <= time_limit and (idx not in claimed_first_clear[str(selected_level)][1]):
+                            reward_gold = fc.get("reward", {}).get("gold", 0)
+                            reward_souls = fc.get("reward", {}).get("souls", 0)
+                            total_gold_earned += reward_gold
+                            total_souls_earned += reward_souls
+                            if reward_gold or reward_souls:
+                                earned_rewards.append(f"Speed Bonus: +{reward_gold} Gold + {reward_souls} Souls")
+
+                            reward_new_cat = fc.get("reward", {}).get("unlock_cat")
+                            if reward_new_cat and reward_new_cat not in unlocked_cats:
+                                unlocked_cats.add(reward_new_cat)
+                                newly_unlocked_cat = reward_new_cat
+                                earned_rewards.append(f"New Cat Unlocked: {reward_new_cat.capitalize()} Cat")
+
+                            
                             
                             claimed_first_clear[str(selected_level)][1].append(idx)
 
