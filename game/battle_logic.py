@@ -105,11 +105,11 @@ def update_battle(cats, enemies, our_tower, enemy_tower, now, souls, cat_y_manag
                                 # `min` 確保不會超過最大閾值索引。
                                 thresholds_crossed = min(int(old_hp / enemy.kb_threshold), int(enemy.max_hp / enemy.kb_threshold) - 1) - int(enemy.hp / enemy.kb_threshold)
                                 
-                                print("enemy", old_hp// enemy.kb_threshold,  enemy.max_hp // enemy.kb_threshold, enemy.hp //enemy.kb_threshold, thresholds_crossed) # 偵錯用。
+                                # print("enemy", old_hp// enemy.kb_threshold,  enemy.max_hp // enemy.kb_threshold, enemy.hp //enemy.kb_threshold, thresholds_crossed) # 偵錯用。
                                 
                                 # 如果跨越了閾值，觸發擊退。
                                 if thresholds_crossed > 0:
-                                    print("enemy knock back") # 偵錯用。
+                                    # print("enemy knock back") # 偵錯用。
                                     enemy.knock_back()
                             enemy.last_hp = enemy.hp # 更新敵人的上次生命值。
                             
