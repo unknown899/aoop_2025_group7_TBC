@@ -599,6 +599,11 @@ async def main_game_loop(screen, clock):
             )
             if new_state == "main_menu":
                 game_state = "main_menu"
+                gacha_is_anim_playing = False
+                gacha_is_fading = False          # 白畫面淡出中
+                gacha_show_result = False        # 顯示結果中
+                gacha_fade_alpha = 255           # 白畫面透明度
+                gacha_result = None
             elif new_state == "quit":
                 return
         elif game_state == "playing":

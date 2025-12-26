@@ -102,8 +102,8 @@ def draw_gacha_screen(
 
     # 轉蛋按鈕
     btn_rect = pygame.Rect(
-        SCREEN_WIDTH // 2 - 125,
-        SCREEN_HEIGHT // 2 - 50,
+        SCREEN_WIDTH - 270,
+        SCREEN_HEIGHT - 170,
         250,
         100
     )
@@ -115,7 +115,7 @@ def draw_gacha_screen(
         screen.blit(label, label.get_rect(center=btn_rect.center))
 
         # 返回
-        back_rect = pygame.Rect(50, SCREEN_HEIGHT - 100, 150, 60)
+        back_rect = pygame.Rect(40, SCREEN_HEIGHT - 120, 150, 60)
         pygame.draw.rect(screen, (150, 50, 50), back_rect, border_radius=15)
         back_text = font.render("Back", True, (255, 255, 255))
         screen.blit(back_text, back_text.get_rect(center=back_rect.center))
