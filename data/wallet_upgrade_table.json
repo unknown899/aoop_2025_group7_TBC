@@ -1,0 +1,10 @@
+[
+    {"level": 1, "max_budget": 6000, "budget_rate": 20, "upgrade_cost": 280},
+    {"level": 2, "max_budget": 7500, "budget_rate": 25, "upgrade_cost": 560},
+    {"level": 3, "max_budget": 9000, "budget_rate": 30, "upgrade_cost": 840},
+    {"level": 4, "max_budget": 10500, "budget_rate": 35, "upgrade_cost": 1120},
+    {"level": 5, "max_budget": 12000, "budget_rate": 40, "upgrade_cost": 1400},
+    {"level": 6, "max_budget": 13500, "budget_rate": 45, "upgrade_cost": 1680},
+    {"level": 7, "max_budget": 15000, "budget_rate": 50, "upgrade_cost": 1960},
+    {"level": 8, "max_budget": 16500, "budget_rate": 55, "upgrade_cost": 0}
+]
