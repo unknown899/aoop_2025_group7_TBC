@@ -921,7 +921,7 @@ async def main_game_loop(screen, clock):
             is_last_level = selected_level == len(levels) - 1
             victory_display_time = getattr(pygame.time, "victory_display_time", 0)
 
-            is_first_victory = selected_level in levels
+            is_first_victory = selected_level not in completed_levels
 
             if status == "victory" and victory_display_time == 0:
                 pygame.time.victory_display_time = pygame.time.get_ticks()
