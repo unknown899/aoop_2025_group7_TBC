@@ -236,15 +236,17 @@ class CannonSkill:
             if self.sweep_start_x >= enemy_left and enemy_right >= self.sweep_end_x:
                 e.take_damage(self.damage, "physic")
                 print(f" - Enemy at x={e.x} took {self.damage} damage!")
+
+        # ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝敵方塔不該受炮的傷害＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
         # 檢查敵方塔樓
-        print(f"Checking enemy_tower at x={enemy_tower.x} with width={enemy_tower.width}")
+        # print(f"Checking enemy_tower at x={enemy_tower.x} with width={enemy_tower.width}")
         # 獲取敵方塔的左右邊界
-        enemy_left = enemy_tower.x
-        enemy_right = enemy_tower.x + enemy_tower.width
+        # enemy_left = enemy_tower.x
+        # enemy_right = enemy_tower.x + enemy_tower.width
         # 檢查敵方塔是否在掃射範圍內(may not correct for other direction)
-        if self.sweep_start_x >= enemy_left and enemy_right >= self.sweep_end_x:
-            enemy_tower.take_damage(self.damage, "physic")
-            print(f" - Enemy_tower at x={enemy_tower.x} took {self.damage} damage!")
+        # if self.sweep_start_x >= enemy_left and enemy_right >= self.sweep_end_x:
+            # enemy_tower.take_damage(self.damage, "physic")
+            # print(f" - Enemy_tower at x={enemy_tower.x} took {self.damage} damage!")
                         
             
                 
