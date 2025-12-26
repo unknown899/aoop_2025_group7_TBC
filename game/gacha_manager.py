@@ -26,7 +26,7 @@ def perform_gacha():
 
     # 4. 隨機抽取邏輯
     # 這裡放你所有的角色 ID（對應你角色清單的字串）
-    all_cats = ["TankCat", "ArcherCat", "NinjaCat", "MageCat", "TitanCat"]
+    all_cats = ["basic","speedy","eraser","mtank","tank", "kp"]
     
     # 30% 機率槓龜，70% 抽中
     if random.random() < 0.3:

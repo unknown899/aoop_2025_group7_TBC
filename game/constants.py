@@ -55,4 +55,4 @@ DATA_DIR = os.path.join(ROOT_DIR, "data")
 
 # 檔案路徑
 RESOURCE_FILE = os.path.join(DATA_DIR, "player_resources.json")
-UNLOCKED_FILE = os.path.join(DATA_DIR, "player_unlocked_cat.json")
+UNLOCKED_FILE = os.path.join(DATA_DIR, "player_unlocked_cats.json")
