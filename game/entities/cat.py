@@ -47,8 +47,17 @@ class Cat(Common):
 
     def start_retreat(self, distance):
         if not self.is_attacking and not self.has_retreated:
-            self.knock_back(direction=distance)  # 重用 knock_back 邏輯
-            self.has_retreated = True
+            if not hasattr(self, 'immunities') or "Knockback Immunity" not in self.immunities.get("self", []):
+                self.kb_animation = True
+                self.kb_start_x = self.x
+                self.kb_target_x = self.x + distance  # 方向可由子類指定
+                self.kb_start_y = self.y
+                self.kb_start_time = pygame.time.get_ticks()
+                self.kb_progress = 0
+                self.anim_state = "knockback"
+                # self.kb_count += 1
+                if self.kb_count >= self.kb_limit:
+                    self.hp = 0
 
     def apply_status_effect(self, effect, duration, chance=0.3, target=None):
         """應用狀態效果到目標，考慮機率和免疫"""
