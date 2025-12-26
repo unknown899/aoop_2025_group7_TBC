@@ -8,7 +8,7 @@ import pygame
 
 def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_time, level_start_time,
                  selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x,
-                 wallet_level, wallet_upgrade_table, player_resources):
+                 wallet_level=None, wallet_upgrade_table = None, player_resources = None):
     """
     繪製遊戲 UI，包括：
     - 背景
@@ -30,7 +30,19 @@ def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_tim
         current_stats = wallet_upgrade_table[wallet_level - 1]
     else:
         current_stats = {"max_budget": 16500, "budget_rate": 55}
-
+    if wallet_level == None:
+        wallet_level = 8
+    if wallet_upgrade_table == None:
+        wallet_upgrade_table = [
+            {"level": 1, "max_budget": 6000, "budget_rate": 20, "upgrade_cost": 280},
+            {"level": 2, "max_budget": 7500, "budget_rate": 25, "upgrade_cost": 560},
+            {"level": 3, "max_budget": 9000, "budget_rate": 30, "upgrade_cost": 840},
+            {"level": 4, "max_budget": 10500, "budget_rate": 35, "upgrade_cost": 1120},
+            {"level": 5, "max_budget": 12000, "budget_rate": 40, "upgrade_cost": 1400},
+            {"level": 6, "max_budget": 13500, "budget_rate": 45, "upgrade_cost": 1680},
+            {"level": 7, "max_budget": 15000, "budget_rate": 50, "upgrade_cost": 1960},
+            {"level": 8, "max_budget": 16500, "budget_rate": 55, "upgrade_cost": 0}
+        ]
     wallet_title = budget_font.render(f"wallet Lv.{wallet_level}", True, (255, 215, 0))
     # limit_text = budget_font.render(f"Max {current_stats['max_budget']}", True, (200, 200, 255))
     # rate_text = budget_font.render(f"生錢: +{current_stats['budget_rate']}/0.333s", True, (100, 255, 100))
