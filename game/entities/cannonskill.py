@@ -226,25 +226,25 @@ class CannonSkill:
     # 傷害計算（只在掃射結束）
     # ======================================================
     def _apply_damage(self, enemies, enemy_tower):
-        print(f"Applying damage to enemies between x={self.sweep_start_x} and x={self.sweep_end_x}")
+        #print(f"Applying damage to enemies between x={self.sweep_start_x} and x={self.sweep_end_x}")
         for e in enemies:
-            print(f"Checking enemy at x={e.x} with width={e.width}")
+            #print(f"Checking enemy at x={e.x} with width={e.width}")
             # 獲取敵人的左右邊界
             enemy_left = e.x
             enemy_right = e.x + e.width
             # 檢查敵人是否在掃射範圍內(may not correct for other direction)
             if self.sweep_start_x >= enemy_left and enemy_right >= self.sweep_end_x:
                 e.take_damage(self.damage, "physic")
-                print(f" - Enemy at x={e.x} took {self.damage} damage!")
+                #print(f" - Enemy at x={e.x} took {self.damage} damage!")
         # 檢查敵方塔樓
-        print(f"Checking enemy_tower at x={enemy_tower.x} with width={enemy_tower.width}")
+        #print(f"Checking enemy_tower at x={enemy_tower.x} with width={enemy_tower.width}")
         # 獲取敵方塔的左右邊界
         enemy_left = enemy_tower.x
         enemy_right = enemy_tower.x + enemy_tower.width
         # 檢查敵方塔是否在掃射範圍內(may not correct for other direction)
         if self.sweep_start_x >= enemy_left and enemy_right >= self.sweep_end_x:
             enemy_tower.take_damage(self.damage, "physic")
-            print(f" - Enemy_tower at x={enemy_tower.x} took {self.damage} damage!")
+            #print(f" - Enemy_tower at x={enemy_tower.x} took {self.damage} damage!")
                         
             
                 
