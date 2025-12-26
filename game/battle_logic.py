@@ -406,6 +406,7 @@ def update_battle(cats, enemies, our_tower, enemy_tower, now, souls, cat_y_manag
             if not target_in_range:
                 enemy.move()
 
+
     # --- 震波擊退效果處理 ---
     # 遍歷當前所有震波特效，並處理其效果。
     for effect in shockwave_effects[:]: # 使用[:]建立副本以避免在迭代時修改列表導致問題。
