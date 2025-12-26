@@ -2,34 +2,81 @@ import pygame
 
 from ..entities import cat_types, cat_costs, cat_cooldowns
 
+# game/ui.py（draw_game_ui 函數）
+
 import pygame
 
-from ..entities import cat_types, cat_costs, cat_cooldowns
+def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_time, level_start_time,
+                 selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x,
+                 wallet_level, wallet_upgrade_table, player_resources):
+    """
+    繪製遊戲 UI，包括：
+    - 背景
+    - 預算
+    - 暫停按鈕
+    - 出貓按鈕（含成本、冷卻條、快捷鍵）
+    - 錢包升級系統（等級、上限、生錢速度、升級按鈕）
+    """
+    SCREEN_WIDTH = screen.get_width()
+    SCREEN_HEIGHT = screen.get_height()
 
-def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_time, level_start_time, selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x):
-    background_color = (200, 255, 200)
-    screen.fill(background_color)
-    camera_offset_x = max(0, min(camera_offset_x, current_level.background.get_width() - screen.get_width()))
-    screen.blit(current_level.background, (0, 0), (camera_offset_x, 0, screen.get_width(), screen.get_height()))
-    
-    # Draw towers, cats, enemies, etc. (assuming this exists in your original code)
-    # ... (rest of your existing draw_game_ui logic for towers, cats, enemies)
+    # 背景（只顯示可見部分）
+    bg_width = current_level.background.get_width()
+    camera_offset_x = max(0, min(camera_offset_x, bg_width - SCREEN_WIDTH))
+    screen.blit(current_level.background, (0, 0), (camera_offset_x, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    budget_text = budget_font.render(f"Budget: {current_budget}", True, (0, 0, 0))
-    screen.blit(budget_text, (1080, 10))
+    # === 錢包升級系統 UI（左上角）===
+    if wallet_upgrade_table and wallet_level <= len(wallet_upgrade_table):
+        current_stats = wallet_upgrade_table[wallet_level - 1]
+    else:
+        current_stats = {"max_budget": 16500, "budget_rate": 55}
 
-    pause_rect = pygame.Rect(1100, 50, 150, 50)
-    pygame.draw.rect(screen, (100, 100, 255), pause_rect)
-    pause_text = font.render("Pause", True, (0, 0, 0))
-    screen.blit(pause_text, (pause_rect.x + 50, pause_rect.y + 15))
+    wallet_title = budget_font.render(f"wallet Lv.{wallet_level}", True, (255, 215, 0))
+    # limit_text = budget_font.render(f"Max {current_stats['max_budget']}", True, (200, 200, 255))
+    # rate_text = budget_font.render(f"生錢: +{current_stats['budget_rate']}/0.333s", True, (100, 255, 100))
+    screen.blit(wallet_title, (50, 50))
+    # screen.blit(limit_text, (50, 90))
+    # screen.blit(rate_text, (50, 130))
 
+    upgrade_rect = None
+    if wallet_level < len(wallet_upgrade_table):
+        next_stats = wallet_upgrade_table[wallet_level]
+        upgrade_cost = next_stats["upgrade_cost"]
+        upgrade_rect = pygame.Rect(50, 180, 240, 70)
+
+        can_upgrade = current_budget >= upgrade_cost
+        btn_color = (0, 180, 0) if can_upgrade else (80, 80, 80)
+        border_color = (0, 255, 0) if can_upgrade else (120, 120, 120)
+
+        pygame.draw.rect(screen, btn_color, upgrade_rect, border_radius=15)
+        pygame.draw.rect(screen, border_color, upgrade_rect, 4, border_radius=15)
+
+        cost_text = budget_font.render(f"upgrade {upgrade_cost} costs", True, (255, 255, 255))
+        next_text = budget_font.render(f"Lv.{wallet_level + 1}", True, (0, 255, 255))
+        screen.blit(cost_text, (upgrade_rect.x + 10, upgrade_rect.y + 10))
+        screen.blit(next_text, (upgrade_rect.x + 10, upgrade_rect.y + 40))
+    else:
+        max_text = budget_font.render("Max", True, (255, 100, 100))
+        screen.blit(max_text, (50, 180))
+
+    # === 預算顯示（右上角）===
+    budget_text = budget_font.render(f"Budget: {current_budget}/{current_stats['max_budget']}", True, (255, 215, 0))
+    screen.blit(budget_text, (SCREEN_WIDTH - budget_text.get_width() - 50, 10))
+
+    # === 暫停按鈕（右上角）===
+    pause_rect = pygame.Rect(SCREEN_WIDTH - 200, 50, 150, 50)
+    pygame.draw.rect(screen, (100, 100, 255), pause_rect, border_radius=15)
+    pause_text = font.render("Pause", True, (255, 255, 255))
+    screen.blit(pause_text, (pause_rect.x + 40, pause_rect.y + 15))
+
+    # === 出貓按鈕（中間偏左）===
     button_x_start = 300
     button_y_start = 50
     button_spacing_x = 120
     button_spacing_y = 70
     max_buttons_per_row = 5
-
     calculated_button_rects = {}
+
     for idx, cat_type in enumerate(selected_cats):
         row = idx // max_buttons_per_row
         col = idx % max_buttons_per_row
@@ -38,39 +85,50 @@ def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_tim
         rect = pygame.Rect(rect_x, rect_y, 100, 60)
         calculated_button_rects[cat_type] = rect
 
-    for idx, cat_type in enumerate(selected_cats):
-        if cat_type in calculated_button_rects:
-            rect = calculated_button_rects[cat_type]
-            cost = cat_costs.get(cat_type, 0)
-            color = (0, 255, 0) if current_budget >= cost else (200, 200, 200)
-            
-            cooldown = cat_cooldowns.get(cat_type, 0)
-            time_since_last_spawn = current_time - last_spawn_time.get(cat_type, 0)
-            if cooldown > 0 and time_since_last_spawn < cooldown:
-                color = (150, 150, 150)
-            
-            pygame.draw.rect(screen, color, rect)
-            screen.blit(font.render(cat_type, True, (0, 0, 0)), (rect.x + 5, rect.y + 5))
-            cost_text = font.render(f"Cost: {cost}", True, (0, 0, 0))
-            screen.blit(cost_text, (rect.x + 5, rect.y + 20))
-            key = next((k for k, v in cat_key_map.items() if v == cat_type), None)
-            key_text = font.render(f"Key: {pygame.key.name(key) if key else 'N/A'}", True, (0, 0, 0)) if key else font.render("Key: N/A", True, (0, 0, 0))
-            screen.blit(key_text, (rect.x + 5, rect.y + 35))
+    for cat_type, rect in calculated_button_rects.items():
+        cost = cat_costs.get(cat_type, 0)
+        cooldown = cat_cooldowns.get(cat_type, 0)
+        time_since_last_spawn = current_time - last_spawn_time.get(cat_type, 0)
 
-            if cooldown > 0 and time_since_last_spawn < cooldown:
-                cooldown_remaining = max(0, cooldown - time_since_last_spawn)
-                cooldown_percentage = cooldown_remaining / cooldown
-                bar_height = 10
-                bar_width = rect.width
-                bar_x = rect.x
-                bar_y = rect.y + rect.height + 5
-                pygame.draw.rect(screen, (150, 150, 150), (bar_x, bar_y, bar_width, bar_height))
-                fill_width = int(bar_width * cooldown_percentage)
-                pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, fill_width, bar_height))
-                pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
+        # 判斷按鈕顏色
+        color = (0, 255, 0) if current_budget >= cost else (200, 200,  200, 200)
+        if cooldown > 0 and time_since_last_spawn < cooldown:
+            color = (150, 150, 150)
 
-    # 更新 button_rects 參數以與 calculated_button_rects 同步
+        pygame.draw.rect(screen, color, rect, border_radius=10)
+        pygame.draw.rect(screen, (0, 0, 0), rect, 2, border_radius=10)
+
+        # 貓名
+        name_text = font.render(cat_type.replace('_', ' ').title(), True, (0, 0, 0))
+        screen.blit(name_text, (rect.x + 5, rect.y + 5))
+
+        # 成本
+        cost_text = font.render(f"${cost}", True, (255, 215, 0))
+        screen.blit(cost_text, (rect.x + 5, rect.y + 25))
+
+        # 快捷鍵
+        key = next((k for k, v in cat_key_map.items() if v == cat_type), None)
+        key_str = pygame.key.name(key).upper() if key else "N/A"
+        key_text = font.render(f"[{key_str}]", True, (255, 255, 255))
+        screen.blit(key_text, (rect.x + 60, rect.y + 25))
+
+        # 冷卻條
+        if cooldown > 0 and time_since_last_spawn < cooldown:
+            cooldown_remaining = max(0, cooldown - time_since_last_spawn)
+            cooldown_percentage = cooldown_remaining / cooldown
+            bar_height = 8
+            bar_width = rect.width - 10
+            bar_x = rect.x + 5
+            bar_y = rect.y + rect.height - bar_height - 5
+
+            pygame.draw.rect(screen, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height))
+            fill_width = int(bar_width * cooldown_percentage)
+            pygame.draw.rect(screen, (255, 100, 100), (bar_x, bar_y, fill_width, bar_height))
+            pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
+
+    # 更新外部 button_rects
     button_rects.clear()
     button_rects.update(calculated_button_rects)
 
-    return pause_rect, calculated_button_rects, camera_offset_x  # 返回 pause_rect 和 calculated_button_rects
+    # 返回值
+    return pause_rect, calculated_button_rects, camera_offset_x, upgrade_rect  # 多返回一個 upgrade_rect 供點擊判斷
