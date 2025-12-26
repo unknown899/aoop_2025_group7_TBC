@@ -66,7 +66,7 @@ try:
 except Exception as e:
     print(f"Error loading wallet upgrade table: {e}")
     wallet_upgrade_table = []
-
+# print(f"Loaded wallet upgrade table: {wallet_upgrade_table}")
 # 載入玩家錢包等級
 try:
     if os.path.exists(WALLET_LEVEL_FILE):
@@ -88,8 +88,6 @@ def update_wallet_stats():
     else:
         total_budget_limitation = 16500
         budget_rate = 55
-
-update_wallet_stats()
 
 async def main_game_loop(screen, clock):
     global unlocked_cats, completed_levels, player_resources
@@ -506,6 +504,10 @@ async def main_game_loop(screen, clock):
                             souls = []
                             shockwave_effects = []
                             wallet_level = 1
+                            stats = wallet_upgrade_table[wallet_level - 1]
+                            total_budget_limitation = stats["max_budget"]
+                            budget_rate = stats["budget_rate"]
+                            print(f"錢包等級設置為 Lv.{wallet_level}，最大預算 {total_budget_limitation}，預算增長率 {budget_rate}/s")
                             # 初始化冷卻時間為完成狀態（可立即出擊）
                             current_time_init = pygame.time.get_ticks()
                             last_spawn_time = {}
@@ -635,7 +637,7 @@ async def main_game_loop(screen, clock):
                             except Exception as e:
                                 print(f"Wallet upgrade save error: {e}")
 
-                            print(f"戰鬥中錢包升級成功！現在 Lv.{wallet_level}")
+                            print(f"現在 Lv.{wallet_level}, 最大預算 {total_budget_limitation}, 預算增長率 {budget_rate}")
                             if key_action_sfx.get('other_button'):
                                 key_action_sfx['other_button'].play()
                         else:
@@ -662,7 +664,7 @@ async def main_game_loop(screen, clock):
                                 cat_spawn_sfx['default'].play()
                             if key_action_sfx.get('can_deploy'):
                                 key_action_sfx['can_deploy'].play()
-                            print(f"Spawned {cat_type} at ({cat.x}, {cat.y})")
+                            # print(f"Spawned {cat_type} at ({cat.x}, {cat.y})")
                         else:
                             if key_action_sfx.get('cannot_deploy'):
                                 key_action_sfx['cannot_deploy'].play()
@@ -679,8 +681,13 @@ async def main_game_loop(screen, clock):
             camera_offset_x = max(0, min(camera_offset_x, bg_width - SCREEN_WIDTH))
 
             # 預算增加
+            stats = wallet_upgrade_table[wallet_level - 1]
+            total_budget_limitation = stats["max_budget"]
+            budget_rate = stats["budget_rate"]
+            # print(f"現在 Lv.{wallet_level + 1}, 最大預算 {total_budget_limitation}, 預算增長率 {budget_rate}")
             if current_time - last_budget_increase_time >= 333:
                 if current_budget < total_budget_limitation:
+                    
                     current_budget = min(current_budget + budget_rate, total_budget_limitation)
                 last_budget_increase_time = current_time
 
