@@ -32,7 +32,7 @@ claimed_first_clear = {"0": [[], []], "1": [[], []], "2": [[], []], "3": [[], []
 wallet_level = 1
 wallet_upgrade_table = []
 
-# 目前戰鬥中的錢包參數（會隨升級即時更新）
+# 目前戰鬥中的錢包參數
 total_budget_limitation = 6000
 budget_rate = 20
 
@@ -206,35 +206,55 @@ async def main_game_loop(screen, clock):
     boss_music_active = False
     boss_shockwave_played = False
 
+    # 音效通道設定（每種音效獨立通道，避免重疊）
+    pygame.mixer.set_num_channels(16)
+    victory_channel = pygame.mixer.Channel(0)
+    defeat_channel = pygame.mixer.Channel(1)
+    boss_intro_channel = pygame.mixer.Channel(2)
+    cat_spawn_channel = pygame.mixer.Channel(3)
+    hit_unit_channel = pygame.mixer.Channel(4)
+    hit_tower_channel = pygame.mixer.Channel(5)
+    unit_die_channel = pygame.mixer.Channel(6)
+    key_action_channel = pygame.mixer.Channel(7)
+
     # Sound loading
     cat_spawn_sfx = {}
     if os.path.exists("audio/TBC/010.ogg"):
         cat_spawn_sfx['default'] = pygame.mixer.Sound("audio/TBC/010.ogg")
         cat_spawn_sfx['default'].set_volume(0.7)
 
-    victory_sfx = pygame.mixer.Sound("audio/TBC/008.ogg") if os.path.exists("audio/TBC/008.ogg") else None
-    defeat_sfx = pygame.mixer.Sound("audio/TBC/009.ogg") if os.path.exists("audio/TBC/009.ogg") else None
-    boss_intro_sfx = pygame.mixer.Sound("audio/TBC/036.ogg") if os.path.exists("audio/TBC/036.ogg") else None
-    # main_menu_sfx = pygame.mixer.Sound("audio/TBC/001.ogg") if os.path.exists("audio/TBC/001.ogg") else None
-    # level_map_sfx = pygame.mixer.Sound("audio/TBC/002.ogg") if os.path.exists("audio/TBC/002.ogg") else None
+    victory_sfx = None
+    if os.path.exists("audio/TBC/008.ogg"):
+        victory_sfx = pygame.mixer.Sound("audio/TBC/008.ogg")
+        victory_sfx.set_volume(0.8)
+
+    defeat_sfx = None
+    if os.path.exists("audio/TBC/009.ogg"):
+        defeat_sfx = pygame.mixer.Sound("audio/TBC/009.ogg")
+        defeat_sfx.set_volume(0.8)
+
+    boss_intro_sfx = None
+    if os.path.exists("audio/TBC/036.ogg"):
+        boss_intro_sfx = pygame.mixer.Sound("audio/TBC/036.ogg")
+        boss_intro_sfx.set_volume(0.7)
 
     key_action_sfx = {
         'cannot_deploy': pygame.mixer.Sound("audio/TBC/015.ogg") if os.path.exists("audio/TBC/015.ogg") else None,
         'can_deploy': pygame.mixer.Sound("audio/TBC/014.ogg") if os.path.exists("audio/TBC/014.ogg") else None,
         'other_button': pygame.mixer.Sound("audio/TBC/011.ogg") if os.path.exists("audio/TBC/011.ogg") else None
     }
-    for key, sfx in key_action_sfx.items():
+    for sfx in key_action_sfx.values():
         if sfx:
-            sfx.set_volume(0.6 if key in ['cannot_deploy', 'can_deploy'] else 0.5)
+            sfx.set_volume(0.6)
 
     battle_sfx = {
         'hit_unit': pygame.mixer.Sound("audio/TBC/021.ogg") if os.path.exists("audio/TBC/021.ogg") else None,
         'hit_tower': pygame.mixer.Sound("audio/TBC/022.ogg") if os.path.exists("audio/TBC/022.ogg") else None,
         'unit_die': pygame.mixer.Sound("audio/TBC/023.ogg") if os.path.exists("audio/TBC/023.ogg") else None
     }
-    for key, sfx in battle_sfx.items():
+    for sfx in battle_sfx.values():
         if sfx:
-            sfx.set_volume(0.6 if key in ['hit_unit', 'hit_tower'] else 0.7)
+            sfx.set_volume(0.7)
 
     while True:
         current_time = pygame.time.get_ticks()
@@ -269,7 +289,7 @@ async def main_game_loop(screen, clock):
                         pygame.mixer.music.stop()
                         current_bgm_path = None
                         if key_action_sfx.get('other_button'):
-                            key_action_sfx['other_button'].play()
+                            key_action_channel.play(key_action_sfx['other_button'])
 
             if elapsed_intro_time >= intro_duration + DELAY_TIME:
                 game_state = "main_menu"
@@ -277,7 +297,6 @@ async def main_game_loop(screen, clock):
                 current_bgm_path = None
 
         elif game_state == "main_menu":
-            # 主選單音樂
             main_menu_music = "audio/TBC/001.ogg"
             if current_bgm_path != main_menu_music and os.path.exists(main_menu_music):
                 pygame.mixer.music.load(main_menu_music)
@@ -302,7 +321,6 @@ async def main_game_loop(screen, clock):
             resource_surf = select_font.render(resource_text, True, (255, 215, 0))
             screen.blit(resource_surf, (50, 30))
 
-            # 顯示錢包等級
             # wallet_info = select_font.render(f"錢包 Lv.{wallet_level} (戰鬥中可升級)", True, (200, 200, 255))
             # screen.blit(wallet_info, (50, 80))
 
@@ -316,11 +334,11 @@ async def main_game_loop(screen, clock):
                     if battle_rect.collidepoint(pos):
                         game_state = "level_map"
                         if key_action_sfx.get('other_button'):
-                            key_action_sfx['other_button'].play()
+                            key_action_channel.play(key_action_sfx['other_button'])
                     elif gacha_rect.collidepoint(pos):
                         game_state = "gacha_developing"
                         if key_action_sfx.get('other_button'):
-                            key_action_sfx['other_button'].play()
+                            key_action_channel.play(key_action_sfx['other_button'])
 
         elif game_state == "level_map":
             # 關卡選擇與貓咪選擇共用音樂
