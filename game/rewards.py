@@ -27,7 +27,7 @@ LEVEL_REWARDS: Dict[int, Dict[str, Any]] = {
             {"weight": 10, "reward": {"gold": 400, "souls": 60}},
             {"weight": 60, "reward": {"gold": 600, "souls": 90}},
             {"weight": 70, "reward": {"unlock_cat": "speedy"}},
-            {"weight": 8, "reward": {"gold": 1000, "souls": 200, "unlock_cat": "uber_cat"}},
+            {"weight": 70, "reward": {"gold": 1000, "souls": 200, "unlock_cat": "speedy"}},
         ],
         "repeatable": [
             {"weight": 100, "reward": {"gold": 120, "souls": 15}},
@@ -45,7 +45,7 @@ LEVEL_REWARDS: Dict[int, Dict[str, Any]] = {
             {"weight": 100, "reward": {"gold": 600, "souls": 100}},
             {"weight": 60, "reward": {"gold": 800, "souls": 140}},
             {"weight": 20, "reward": {"unlock_cat": "tank"}},
-            {"weight": 10, "reward": {"gold": 1500, "souls": 300, "unlock_cat": "bahamut_cat"}},
+            {"weight": 60, "reward": {"gold": 1500, "souls": 300, "unlock_cat": "tank"}},
         ],
         "repeatable": [
             {"weight": 100, "reward": {"gold": 150, "souls": 20}},
