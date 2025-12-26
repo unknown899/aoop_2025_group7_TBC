@@ -207,3 +207,38 @@ def load_cannonicon_image(scale=1.0):
         gray = pygame.transform.scale(gray, new_size)
     
     return ready, full, gray
+
+def load_single_image(path, size=None, convert_alpha=True):
+    """
+    載入單張圖片並進行縮放。
+    
+    參數:
+        path (str): 圖片路徑
+        size (tuple): 目標大小 (width, height)，若為 None 則保持原圖大小
+        convert_alpha (bool): 是否保留透明通道 (推薦 UI/去背圖使用 True)
+    
+    返回:
+        pygame.Surface: 處理後的圖片物件
+    """
+    if not os.path.exists(path):
+        print(f"Warning: File {path} not found!")
+        # 如果找不到檔案，回傳一個紅色方塊避免程式崩潰
+        fallback = pygame.Surface(size if size else (100, 100))
+        fallback.fill((255, 0, 0))
+        return fallback
+
+    # 1. 載入圖片
+    image = pygame.image.load(path)
+    
+    # 2. 根據需求決定是否轉換格式以優化效能
+    if convert_alpha:
+        image = image.convert_alpha()
+    else:
+        image = image.convert()
+
+    # 3. 縮放處理
+    if size:
+        # 使用 smoothscale 讓背景縮放後更細緻
+        image = pygame.transform.smoothscale(image, size)
+        
+    return image

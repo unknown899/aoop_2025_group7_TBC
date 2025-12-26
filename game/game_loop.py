@@ -143,7 +143,7 @@ async def main_game_loop(screen, clock):
     from .battle_logic import update_battle
     from .ui import draw_game_ui, draw_pause_menu, draw_end_screen, draw_intro_screen, draw_ending_animation, draw_level_selection
     from .entities import cat_types, cat_costs, cat_cooldowns, levels, enemy_types, YManager, CSmokeEffect, load_cat_images, OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy, EnemySpawner, CannonSkill, CannonIcon
-    from game.constants import csmoke_images1, csmoke_images2, cannon_images, icon_cfg
+    from game.constants import csmoke_images1, csmoke_images2, cannon_images, icon_cfg, gacha_background
 
     # Battle variables
     cats = []
@@ -334,9 +334,15 @@ async def main_game_loop(screen, clock):
                         if key_action_sfx.get('other_button'):
                             key_action_channel.play(key_action_sfx['other_button'])
                     elif gacha_rect.collidepoint(pos):
+                        '''
                         game_state = "gacha_developing"
                         if key_action_sfx.get('other_button'):
                             key_action_channel.play(key_action_sfx['other_button'])
+                            key_action_sfx['other_button'].play()
+                        '''
+                        game_state = "gacha"
+                        if key_action_sfx.get('other_button'):
+                            key_action_sfx['other_button'].play()
 
         elif game_state == "level_map":
             # 關卡選擇與貓咪選擇共用音樂
@@ -548,7 +554,19 @@ async def main_game_loop(screen, clock):
             if new_state == "main_menu":
                 game_state = "main_menu"
                 print("返回主選單 from 轉蛋頁面")
-
+        elif game_state == "gacha":
+            from .ui.gacha_ui import draw_gacha_screen # 確保路徑對
+            new_state = draw_gacha_screen(
+                screen=screen,
+                select_font=select_font,
+                font=font,
+                gacha_bg=gacha_background, # 這是你 load_single_image 載入的圖
+                key_action_sfx=key_action_sfx
+            )
+            if new_state == "main_menu":
+                game_state = "main_menu"
+            elif new_state == "quit":
+                return
         elif game_state == "playing":
             current_level = levels[selected_level]
             bg_width = current_level.background.get_width()
