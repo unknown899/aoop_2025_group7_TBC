@@ -22,3 +22,7 @@ icon_cfg = {
     'gray': gray,           # 你準備好的灰階圖
     'bounds': (701*0.4*1/9.25, 701*0.4*6.25/9.75)                  # 假設非透明區域在 Y=15~85 之間
 }
+
+# Gacha cost constants
+GACHA_COST_GOLD = 500
+GACHA_COST_SOUL = 5
