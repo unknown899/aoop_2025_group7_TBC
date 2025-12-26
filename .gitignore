@@ -1,0 +1,6 @@
+# Python specific
+*.pyc
+__pycache__/
+completed_levels.json__pycache__/
+*.pyc
+game/__pycache__/
