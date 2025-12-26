@@ -52,7 +52,7 @@ def extract_frames(video_path, output_folder, fps=None, start_time=0, end_time=N
 
         # 只在指定間隔儲存
         if (current_frame - start_frame) % frame_interval == 0:
-            filename = f"frame_{saved_count:06d}.jpg"
+            filename = f"frame_{saved_count}.jpg"
             filepath = os.path.join(output_folder, filename)
             cv2.imwrite(filepath, frame)
             saved_count += 1
@@ -66,14 +66,14 @@ def extract_frames(video_path, output_folder, fps=None, start_time=0, end_time=N
 
 # ==================== 使用範例 ====================
 if __name__ == "__main__":
-    video_file = "input_video.mp4"          # 你的影片檔名
-    output_dir = "output_frames"            # 輸出的資料夾
+    video_file = "./rotate_egg.mp4"          # 你的影片檔名
+    output_dir = "./gacha_rotate"            # 輸出的資料夾
 
     # 範例1：完整影片，使用原始 FPS 存所有 frame
     # extract_frames(video_file, output_dir)
 
     # 範例2：每秒存 1 張（適合做縮圖或分析）
-    extract_frames(video_file, output_dir, fps=30)
+    extract_frames(video_file, output_dir, fps=2)
 
     # 範例3：只取前 10 秒，每秒 2 張
     # extract_frames(video_file, output_dir, fps=2, start_time=0, end_time=10)
