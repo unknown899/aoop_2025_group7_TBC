@@ -1,4 +1,5 @@
 cat_config = {
+    "id":4,
     "hp": 300,
     "atk": 120,
     "speed": 3,
