@@ -303,8 +303,8 @@ async def main_game_loop(screen, clock):
             screen.blit(resource_surf, (50, 30))
 
             # 顯示錢包等級
-            wallet_info = select_font.render(f"錢包 Lv.{wallet_level} (戰鬥中可升級)", True, (200, 200, 255))
-            screen.blit(wallet_info, (50, 80))
+            # wallet_info = select_font.render(f"錢包 Lv.{wallet_level} (戰鬥中可升級)", True, (200, 200, 255))
+            # screen.blit(wallet_info, (50, 80))
 
             pygame.display.flip()
 
@@ -487,7 +487,7 @@ async def main_game_loop(screen, clock):
                             enemies = []
                             souls = []
                             shockwave_effects = []
-
+                            wallet_level = 1
                             # 初始化冷卻時間為完成狀態（可立即出擊）
                             current_time_init = pygame.time.get_ticks()
                             last_spawn_time = {}
@@ -740,15 +740,18 @@ async def main_game_loop(screen, clock):
                 if status != "victory":
                     status = "victory"
                     game_state = "end"
-                    # ... 音效 ...
                     pygame.mixer.music.stop()
                     current_bgm_path = None
                     boss_music_active = False
                     boss_shockwave_played = False
+
+                    # 強制播放勝利音效
                     if victory_sfx:
                         victory_sfx.set_volume(0.8)
                         victory_sfx.play()
-
+                        print("勝利！播放音效 008.ogg")
+                    else:
+                        print("勝利音效未載入！檢查 audio/TBC/008.ogg")
                     clear_time_seconds = (current_time - level_start_time) / 1000
                     reward_data = LEVEL_REWARDS.get(selected_level, {})
                     print(f"關卡 {selected_level} 獲得獎勵資料: {reward_data}")
