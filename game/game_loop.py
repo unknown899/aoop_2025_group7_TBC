@@ -86,8 +86,8 @@ async def main_game_loop(screen, clock):
     # Import entities and UI
     from .battle_logic import update_battle
     from .ui import draw_game_ui, draw_pause_menu, draw_end_screen, draw_intro_screen, draw_ending_animation, draw_level_selection
-    from .entities import cat_types, cat_costs, cat_cooldowns, levels, enemy_types, YManager, CSmokeEffect, load_cat_images, OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy, EnemySpawner
-    from game.constants import csmoke_images1, csmoke_images2
+    from .entities import cat_types, cat_costs, cat_cooldowns, levels, enemy_types, YManager, CSmokeEffect, load_cat_images, OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy, EnemySpawner, CannonSkill, CannonIcon
+    from game.constants import csmoke_images1, csmoke_images2, cannon_images, icon_cfg
 
     # Battle variables
     cats = []
@@ -350,7 +350,7 @@ async def main_game_loop(screen, clock):
                             current_level.reset_towers()
                             our_tower = current_level.our_tower
                             enemy_tower = current_level.enemy_tower
-
+                            our_tower_center = current_level.background.get_width()/2 + current_level.tower_distance / 2
                             our_tower.csmoke_effects.extend([
                                 CSmokeEffect(our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 - 30,
                                              our_tower.x + our_tower.width // 2, our_tower.y + our_tower.height // 2 + 30,
@@ -383,7 +383,22 @@ async def main_game_loop(screen, clock):
                                 strategy = MLSpawnStrategy()
                             enemy_spawner = EnemySpawner(strategy)
                             current_level.reset_spawn_counts()
-
+                            cannon = CannonSkill(
+                                    origin_pos=(our_tower_center-our_tower.width//4-10, 205),
+                                    sweep_start_x=our_tower_center-our_tower.width//2,
+                                    range=2600,
+                                    ground_y=460,
+                                    sweep_speed=2.5,
+                                    cooldown=5000,
+                                    damage=300,
+                                    origin_frames=cannon_images["origin"],
+                                    beam_frames=cannon_images["beam"],
+                                    sweep_fx_frames=cannon_images["sweep_fx"],
+                                    after_fx_frames=cannon_images["after_fx"],
+                                    frame_duration1=80,# for sweep_fx
+                                    frame_duration2=100,# for after_fx
+                                )
+                            cannon_icon = CannonIcon(ui_pos=(1090, 420), icon_config=icon_cfg, ui_frame_duration=100)
                             cats = []
                             enemies = []
                             souls = []
@@ -428,9 +443,8 @@ async def main_game_loop(screen, clock):
                 print("返回主選單 from 轉蛋頁面")
 
         elif game_state == "playing":
-            # 更新貓咪快捷鍵與出貓按鈕位置
-            button_rects = {cat_type: pygame.Rect(1100 + idx * 120, 50, 100, 50) for idx, cat_type in enumerate(selected_cats)}
-            cat_key_map = {pygame.K_1 + i: cat_type for i, cat_type in enumerate(selected_cats[:10])}
+            current_level = levels[selected_level]
+            bg_width = current_level.background.get_width()
 
             # 繪製遊戲 UI（返回 pause_rect 與更新後的 camera_offset_x）
             pause_rect, button_rects, camera_offset_x = draw_game_ui(
@@ -438,27 +452,37 @@ async def main_game_loop(screen, clock):
                 selected_cats, last_spawn_time, button_rects, font, cat_key_map, budget_font, camera_offset_x
             )
 
-            # Boss 登場特效與音樂切換（只播放一次）
+            # Boss 登場邏輯
             any_boss_present = any(enemy.is_boss for enemy in enemies)
             if any_boss_present and not boss_shockwave_played:
                 if boss_intro_sfx:
                     boss_intro_sfx.play()
                 boss_shockwave_played = True
-
-            if current_level.switch_music_on_boss and not boss_music_active and any_boss_present:
+                print("Boss appeared, playing shockwave sound.")
+            if current_level.switch_music_on_boss and not boss_music_active:
                 if current_level.boss_music_path and os.path.exists(current_level.boss_music_path):
                     pygame.mixer.music.load(current_level.boss_music_path)
                     pygame.mixer.music.play(-1)
                     current_bgm_path = current_level.boss_music_path
                     boss_music_active = True
+                    print("Switched to boss music.")
+                else:
+                    print(f"Warning: boss music '{current_level.boss_music_path}' not found.")
 
             # 事件處理
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return
-
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = event.pos
+
+                    # 點擊大炮（cannon）圖標
+                    if cannon_icon.is_clicked(pos):
+                        if cannon.state == "ready":
+                            cannon.activate(current_time)
+                            # sfx_laser.play()  # 註解中，需定義 sfx_laser
+                        # else:
+                        #     sfx_fail.play()  # 註解中，需定義 sfx_fail
 
                     # 點擊暫停按鈕
                     if pause_rect.collidepoint(pos):
@@ -473,64 +497,64 @@ async def main_game_loop(screen, clock):
                             cost = cat_costs.get(cat_type, 0)
                             cooldown = cat_cooldowns.get(cat_type, 0)
                             can_deploy = current_budget >= cost and (current_time - last_spawn_time.get(cat_type, 0) >= cooldown)
-
                             if can_deploy:
                                 current_budget -= cost
-                                our_tower_center = current_level.our_tower.x + current_level.our_tower.width // 2
+                                our_tower_center = current_level.our_tower.x + current_level.our_tower.width / 2
                                 cat_y, cat_slot = cat_y_manager.get_available_y()
                                 cat = cat_types[cat_type](our_tower_center, cat_y)
                                 cat.slot_index = cat_slot
-                                cat.x = our_tower_center - cat.width // 2 - 90
+                                start_x = our_tower_center - cat.width / 2 - 90
+                                cat.x = start_x
                                 cats.append(cat)
                                 last_spawn_time[cat_type] = current_time
-
                                 if cat_spawn_sfx.get('default'):
                                     cat_spawn_sfx['default'].play()
                                 if key_action_sfx.get('can_deploy'):
                                     key_action_sfx['can_deploy'].play()
+                                print(f"Spawned {cat_type} at ({cat.x}, {cat.y}) via mouse")
                             else:
                                 if key_action_sfx.get('cannot_deploy'):
                                     key_action_sfx['cannot_deploy'].play()
+                                print(f"Cannot spawn '{cat_type}': {'Insufficient gold' if current_budget < cost else 'On cooldown'}")
 
                 elif event.type == pygame.KEYDOWN:
-                    # 快捷鍵出貓（數字鍵 1~0）
                     if event.key in cat_key_map:
                         cat_type = cat_key_map[event.key]
                         cost = cat_costs.get(cat_type, 0)
                         cooldown = cat_cooldowns.get(cat_type, 0)
                         can_deploy = current_budget >= cost and (current_time - last_spawn_time.get(cat_type, 0) >= cooldown)
-
                         if can_deploy:
                             current_budget -= cost
-                            our_tower_center = current_level.our_tower.x + current_level.our_tower.width // 2
+                            our_tower_center = current_level.our_tower.x + current_level.our_tower.width / 2
                             cat_y, cat_slot = cat_y_manager.get_available_y()
                             cat = cat_types[cat_type](our_tower_center, cat_y)
                             cat.slot_index = cat_slot
-                            cat.x = our_tower_center - cat.width // 2 - 90
+                            start_x = our_tower_center - cat.width / 2 - 90
+                            cat.x = start_x
                             cats.append(cat)
                             last_spawn_time[cat_type] = current_time
-
                             if cat_spawn_sfx.get('default'):
                                 cat_spawn_sfx['default'].play()
                             if key_action_sfx.get('can_deploy'):
                                 key_action_sfx['can_deploy'].play()
+                            print(f"Spawned {cat_type} at ({cat.x}, {cat.y})")
                         else:
                             if key_action_sfx.get('cannot_deploy'):
                                 key_action_sfx['cannot_deploy'].play()
+                            print(f"Cannot spawn '{cat_type}': {'Insufficient gold' if current_budget < cost else 'On cooldown'}")
                     else:
-                        # 其他按鍵（如 ESC 等）可在此擴充
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
 
-            # 相機左右移動
+            # 處理畫面左右滑動
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
                 camera_offset_x -= 10
             if keys[pygame.K_RIGHT]:
                 camera_offset_x += 10
-            camera_offset_x = max(0, min(camera_offset_x, current_level.background.get_width() - SCREEN_WIDTH))
+            camera_offset_x = max(0, min(camera_offset_x, bg_width - SCREEN_WIDTH))
 
-            # 預算自動增加（每 333ms）
+            # 預算增加
             if current_time - last_budget_increase_time >= 333:
                 if current_budget < total_budget_limitation:
                     current_budget = min(current_budget + budget_rate, total_budget_limitation)
@@ -560,10 +584,10 @@ async def main_game_loop(screen, clock):
             for enemy in enemies:
                 enemy.update_status_effects(current_time)
 
-            # 戰鬥邏輯更新
+            # 戰鬥邏輯更新（包含炮台）
             shockwave_effects = update_battle(
                 cats, enemies, our_tower, enemy_tower, current_time, souls,
-                cat_y_manager, enemy_y_manager, shockwave_effects, current_budget, battle_sfx
+                cat_y_manager, enemy_y_manager, cannon, shockwave_effects, current_budget, battle_sfx
             )
             souls = [soul for soul in souls if soul.update()]
 
@@ -571,7 +595,6 @@ async def main_game_loop(screen, clock):
             our_tower.draw(screen, camera_offset_x)
             if enemy_tower:
                 enemy_tower.draw(screen, camera_offset_x)
-
             for soul in souls:
                 soul.draw(screen, camera_offset_x)
             for shockwave in shockwave_effects:
@@ -581,18 +604,19 @@ async def main_game_loop(screen, clock):
             for enemy in enemies:
                 enemy.draw(screen, camera_offset_x)
 
+            # 繪製大炮（隨相機移動）
+            cannon.draw(screen, camera_offset_x)
+
+            # 繪製大炮 UI（固定在螢幕上）
+            if cannon.state == "cooldown":
+                progress = min(1.0, (current_time - cannon.cooldown_start) / cannon.cooldown)
+            elif cannon.state == "ready":
+                progress = 1.0
+            else:  # "firing" 或其他狀態
+                progress = 0.0
+            cannon_icon.draw(screen, cannon.state, progress, current_time)
+
             pygame.display.flip()
-            claimed_first_clear = {"0": [], "1": [], "2": [], "3": [], "4": []}  # 預設結構
-            try:
-                if os.path.exists(FIRST_CLEAR_CLAIMED_FILE):
-                    with open(FIRST_CLEAR_CLAIMED_FILE, "r") as f:
-                        loaded = json.load(f)
-                        if isinstance(loaded, dict):
-                            claimed_first_clear = {str(k): v for k, v in loaded.items()}  # 確保 key 是 str
-            except Exception as e:
-                print(f"Warning: failed to load first_clear claimed: {e}")
-
-
 
             # 勝負判斷
             if our_tower.hp <= 0:
