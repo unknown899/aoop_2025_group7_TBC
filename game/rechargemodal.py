@@ -104,11 +104,14 @@ class RechargeModal:
 
     # ---------- 事件 ----------
     def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
+
+        if event.type == pygame.QUIT:
+            return "quit"
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             for pack in self.packs:
                 if pack["rect"].collidepoint(event.pos):
                     self.selected_pack = pack
-
+         
         elif event.type == pygame.KEYDOWN:
             if self.success:
                 if event.key == pygame.K_RETURN:

@@ -24,6 +24,7 @@ player_resources = {"gold": 0, "souls": 0}
 selected_cats = []
 selected_level = 0
 game_state = "intro"
+previous_game_state = "intro"
 
 
 
@@ -605,15 +606,20 @@ async def main_game_loop(screen, clock):
             if gacha_result and gacha_result['won_id'] not in unlocked_cats:
                 unlocked_cats.add(gacha_result['won_id'])  # 解鎖貓咪
 
-            if new_state == "main_menu":
-                game_state = "main_menu"
+            if new_state is not None:#not continue gacha
                 gacha_is_anim_playing = False
                 gacha_is_fading = False          # 白畫面淡出中
                 gacha_show_result = False        # 顯示結果中
                 gacha_fade_alpha = 255           # 白畫面透明度
                 gacha_result = None
+
+            if new_state == "main_menu":
+                game_state = "main_menu"
             elif new_state == "quit":
                 return
+            elif new_state == "recharge":
+                previous_game_state = "gacha"
+                game_state = "recharge"
         elif game_state == "recharge":
             from .ui.recharge_screen import draw_recharge_screen
             draw_recharge_screen(
@@ -625,6 +631,8 @@ async def main_game_loop(screen, clock):
                 ret = recharge_modal.handle_event(event)
                 if ret == "close":
                     game_state = previous_game_state
+                elif ret == "quit":
+                    return
 
         elif game_state == "playing":
             current_level = levels[selected_level]

@@ -92,10 +92,12 @@ gacha_anim_player = GachaAnimationPlayer(
     pos=(640, 300),
     frame_duration=150
 )
+
 # 初始化充值視窗
 recharge_modal = RechargeModal(
     panel_rect=pygame.Rect(300, 150, 600, 450),
-    resource_file=RESOURCE_FILE
+    resource_file=RESOURCE_FILE,
+    font = pygame.font.SysFont(None, 60)
 )
 recharge_bg = load_single_image(
     path="images/background/recharge_bg.jpg", 
