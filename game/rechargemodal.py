@@ -3,10 +3,12 @@ import json
 import time
 
 class RechargeModal:
-    def __init__(self, panel_rect, resource_file, font):
+    def __init__(self, panel_rect, resource_file, font1, font2, font3):
         self.rect = panel_rect
         self.resource_file = resource_file
-        self.font = font
+        self.font1 = font1#bigger
+        self.font2 = font2
+        self.font3 = font3#middle
 
         # ----------------- 儲值方案 -----------------
         self.packs = [
@@ -54,21 +56,29 @@ class RechargeModal:
         panel = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         panel.fill((0, 0, 0, 180))
         screen.blit(panel, self.rect.topleft)
-
+        '''
         # 標題
-        title = self.font.render("Recharge", True, (255, 255, 255))
+        title = self.font1.render("Recharge", True, (255, 255, 255))
         screen.blit(title, (self.rect.x + 20, self.rect.y + 20))
-
+        '''
         #儲值提示
-        hint = self.font.render("Select a pack and enter card number:", True, (255, 255, 255))
+        hint = self.font1.render("Select a pack and enter card number:", True, (255, 255, 255))
         screen.blit(hint, (self.rect.x + 20, self.rect.y + 60))
+
+        #pack_title
+        pack_title = self.font3.render("Recharge Packs:", True, (255, 255, 255))
+        screen.blit(pack_title, (self.rect.x + 20, self.rect.y + 120))
+
+        #card_title
+        card_title = self.font3.render("Card Number:", True, (255, 255, 255))
+        screen.blit(card_title, (self.rect.x + 450, self.rect.y + 120))
 
         # 繪製儲值方案
         for i, pack in enumerate(self.packs):
             # 計算按鈕位置
             btn_x = self.rect.x + 50
-            btn_y = self.rect.y + 80 + i * 60
-            btn_w = 200
+            btn_y = self.rect.y + 180 + i * 60
+            btn_w = 300
             btn_h = 45
             pack["rect"] = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
 
@@ -82,13 +92,13 @@ class RechargeModal:
             pygame.draw.rect(screen, border_color, pack["rect"], 3, border_radius=8)
 
             # 文字
-            txt = self.font.render(f"{pack['gold']} Gold ({pack['price']})", True, (255, 255, 255))
+            txt = self.font2.render(f"{pack['gold']} Gold ({pack['price']})", True, (255, 255, 255))
             screen.blit(txt, txt.get_rect(center=pack["rect"].center))
         # 信用卡輸入框
-        input_rect = pygame.Rect(self.rect.x + 300, self.rect.y + 100, 260, 50)
+        input_rect = pygame.Rect(self.rect.x + 450, self.rect.y + 200, 260, 50)
         pygame.draw.rect(screen, (255, 255, 255), input_rect, 2, border_radius=6)
         card_text = self.format_card_number()
-        render = self.font.render(card_text, True, (255, 255, 255))
+        render = self.font2.render(card_text, True, (255, 255, 255))
         screen.blit(render, (input_rect.x + 10, input_rect.y + 10))
 
         # 游標閃爍
@@ -97,20 +107,20 @@ class RechargeModal:
             pygame.draw.line(screen, (255, 255, 255), (cursor_x, input_rect.y + 10), (cursor_x, input_rect.y + 40), 2)
 
         # 確認按鈕（灰/亮）
-        self.confirm_rect = pygame.Rect(self.rect.x + 300, self.rect.y + 180, 120, 40)
+        self.confirm_rect = pygame.Rect(self.rect.x + 450, self.rect.y + 280, 120, 40)
         if self.selected_pack and len(self.card_digits) == 16:
             confirm_color = (50, 200, 50)  # 可點亮
         else:
             confirm_color = (100, 100, 100)  # 灰色
 
         pygame.draw.rect(screen, confirm_color, self.confirm_rect, border_radius=6)
-        confirm_txt = self.font.render("Confirm", True, (255, 255, 255))
+        confirm_txt = self.font2.render("Confirm", True, (255, 255, 255))
         screen.blit(confirm_txt, confirm_txt.get_rect(center=self.confirm_rect.center))
 
         # 取消按鈕
-        self.cancel_rect = pygame.Rect(self.rect.right - 110, self.rect.y + 20, 90, 35)
+        self.cancel_rect = pygame.Rect(self.rect.right - 120, self.rect.y + 20, 110, 35)
         pygame.draw.rect(screen, (150, 60, 60), self.cancel_rect, border_radius=6)
-        cancel_text = self.font.render("Cancel", True, (255, 255, 255))
+        cancel_text = self.font2.render("Cancel", True, (255, 255, 255))
         screen.blit(cancel_text, cancel_text.get_rect(center=self.cancel_rect.center))
 
         # 成功儲值畫面
@@ -119,9 +129,9 @@ class RechargeModal:
             fade.fill((255, 255, 255))
             fade.set_alpha(self.fade_alpha)
             screen.blit(fade, (0, 0))
-            msg = self.font.render(f"Recharge Success! +{self.selected_pack['gold']} Gold", True, (0, 0, 0))
+            msg = self.font1.render(f"Recharge Success! +{self.selected_pack['gold']} Gold", True, (0, 0, 0))
             screen.blit(msg, msg.get_rect(center=screen.get_rect().center))
-            enter_msg = self.font.render("Press Enter to close", True, (0, 0, 0))
+            enter_msg = self.font1.render("Press Enter to close", True, (0, 0, 0))
             screen.blit(enter_msg, enter_msg.get_rect(center=(screen.get_rect().centerx, screen.get_rect().centery+50)))
 
 
