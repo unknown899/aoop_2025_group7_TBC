@@ -115,8 +115,19 @@ def draw_gacha_screen(
         pygame.draw.rect(screen, (70, 40, 120), btn_rect, border_radius=15)
         pygame.draw.rect(screen, (255, 255, 255), btn_rect, 3, border_radius=15)
 
+        # 1. 原有的 "Roll Single" 文字
         label = font.render("Roll Single", True, (255, 255, 255))
-        screen.blit(label, label.get_rect(center=btn_rect.center))
+        # 將中心點往上移動一點 (例如 -10)，給下方的資訊留空間
+        label_rect = label.get_rect(center=(btn_rect.centerx, btn_rect.centery - 10))
+        screen.blit(label, label_rect)
+
+        # 2. 新增的資源消耗文字 (使用較小的字體或直接渲染)
+        cost_text = f"Gold: -{GACHA_COST_GOLD}, Soul: -{GACHA_COST_SOULS}"
+        # 建議可以用稍微小一點的字體，這裡先假設使用同一個 font
+        cost_label = font.render(cost_text, True, (255, 0, 0)) # 顏色稍微調淡一點
+        # 將中心點往下移動 (例如 +15)
+        cost_rect = cost_label.get_rect(center=(btn_rect.centerx, btn_rect.centery + 15))
+        screen.blit(cost_label, cost_rect)
 
         # 返回
         back_rect = pygame.Rect(40, SCREEN_HEIGHT - 120, 150, 60)

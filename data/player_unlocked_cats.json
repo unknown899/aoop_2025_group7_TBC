@@ -1,8 +1,9 @@
 [
-    "speedy",
-    "mtank",
-    "eraser",
     "basic",
+    "mtank",
     "kp",
-    "tank"
+    "tank",
+    "speedy",
+    "eraser",
+    null
 ]
