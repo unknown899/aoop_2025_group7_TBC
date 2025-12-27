@@ -54,6 +54,8 @@ class RechargeModal:
         '''
     # ---------- 繪製 ----------
     def draw(self, screen):
+
+        SCREEN_WIDTH, SCREEN_HEIGHT = screen.get_size()
         # 畫半透明 panel
         panel = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         panel.fill((0, 0, 0, 180))
@@ -124,6 +126,22 @@ class RechargeModal:
         pygame.draw.rect(screen, (150, 60, 60), self.cancel_rect, border_radius=6)
         cancel_text = self.font2.render("Cancel", True, (255, 255, 255))
         screen.blit(cancel_text, cancel_text.get_rect(center=self.cancel_rect.center))
+
+        # -------------------------
+        # 讀取資源
+        # -------------------------
+        try:
+            with open(self.resource_file, "r", encoding="utf-8") as f:
+                player_data = json.load(f)
+        except:
+            player_data = {"gold": 0, "souls": 0}
+
+        # 資源顯示
+
+        gold_text = self.font1.render(f"Gold: {player_data['gold']}", True, (255, 215, 0))
+        soul_text = self.font1.render(f"Souls: {player_data['souls']}", True, (200, 100, 255))
+        screen.blit(gold_text, (SCREEN_WIDTH - 610, 553))
+        screen.blit(soul_text, (SCREEN_WIDTH - 300, 553))
 
         if self.success:
             # 1. 繪製半透明黑色背景遮罩 (讓後方遊戲畫面變暗，突出視窗)
