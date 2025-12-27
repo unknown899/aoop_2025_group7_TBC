@@ -173,26 +173,37 @@ def draw_gacha_screen(
             screen.blit(
                 text,
                 text.get_rect(
-                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120)
+                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 140)
                 )
             )
         else:
-            # 沒中 → 小一點、靠中間
-            text = font.render(msg, True, (200, 200, 200))
+            fail_img = pygame.image.load(
+                f"./images/fail_img.jpg"
+            ).convert_alpha()
+
+            new_size = (400, int(fail_img.get_height() * 400/fail_img.get_width()))
+            fail_img = pygame.transform.scale(fail_img, new_size)
+            
+            fail_rect = fail_img.get_rect(
+                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)
+            )
+            screen.blit(fail_img, fail_rect)
+            # 大字 msg
+            text = select_font.render(msg, True, (200, 215, 0))#different color for no win
             screen.blit(
                 text,
                 text.get_rect(
-                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 140)
                 )
             )
-        hint = font.render("Press ENTER to continue", True, (180, 180, 180))
+        hint = font.render("Press ENTER to continue", True, (20, 180, 20))
         screen.blit(
             hint,
             hint.get_rect(
                 center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 80)
             )
         )
-
+    '''
     # -------------------------
     # 顯示結果
     # -------------------------
@@ -203,7 +214,7 @@ def draw_gacha_screen(
             text,
             text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 140))
         )
-
+    '''
     pygame.display.flip()
 
     # -------------------------

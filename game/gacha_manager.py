@@ -29,7 +29,7 @@ def perform_gacha():
     all_cats = ["basic", "speedy", "eraser", "mtank", "tank", "kp"]
     result = {"won_id": None, "is_new": False, "msg": ""}
 
-    if random.random() < 0.2: # 20% 沒抽中
+    if random.random() < 0.8: # 20% 沒抽中
         result["msg"] = "Try Again!"
     else:
         won_cat = random.choice(all_cats)
