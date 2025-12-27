@@ -95,10 +95,7 @@ def draw_gacha_screen(
     # -------------------------
     screen.blit(gacha_bg, (0, 0))
 
-    gold_text = select_font.render(f"Gold: {player_data['gold']}", True, (255, 215, 0))
-    soul_text = select_font.render(f"Souls: {player_data['souls']}", True, (200, 100, 255))
-    screen.blit(gold_text, (SCREEN_WIDTH - 610, 553))
-    screen.blit(soul_text, (SCREEN_WIDTH - 300, 553))
+    
 
     # 轉蛋按鈕
     btn_rect = pygame.Rect(
@@ -145,6 +142,11 @@ def draw_gacha_screen(
     if gacha_show_result:
         screen.blit(gacha_afterbg, (0, 0))  # 或另一張 result_bg
 
+    gold_text = select_font.render(f"Gold: {player_data['gold']}", True, (255, 215, 0))
+    soul_text = select_font.render(f"Souls: {player_data['souls']}", True, (200, 100, 255))
+    screen.blit(gold_text, (SCREEN_WIDTH - 610, 553))
+    screen.blit(soul_text, (SCREEN_WIDTH - 300, 553))
+    
     if gacha_show_result and gacha_result:
 
         msg = gacha_result["msg"]
