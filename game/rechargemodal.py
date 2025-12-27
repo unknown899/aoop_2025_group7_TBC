@@ -135,7 +135,7 @@ class RechargeModal:
         # 取消按鈕
         self.cancel_rect = pygame.Rect(self.rect.right - 120, self.rect.y + 20, 110, 35)
         pygame.draw.rect(screen, (150, 60, 60), self.cancel_rect, border_radius=6)
-        cancel_text = self.font2.render("Cancel", True, (255, 255, 255))
+        cancel_text = self.font2.render("Exit", True, (255, 255, 255))
         screen.blit(cancel_text, cancel_text.get_rect(center=self.cancel_rect.center))
 
         # -------------------------
