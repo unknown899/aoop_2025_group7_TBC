@@ -258,6 +258,8 @@ def draw_gacha_screen(
                     gacha_result = result
                     gacha_is_anim_playing = True
                     gacha_anim_player.start(pygame.time.get_ticks())
+                elif not success and result["msg"] == "Insufficient Resources!":
+                    new_game_state = "recharge"   # ← 交給主程式切 state
 
         elif event.type == pygame.KEYDOWN:
 

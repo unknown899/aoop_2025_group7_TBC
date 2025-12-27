@@ -20,3 +20,5 @@ def draw_recharge_screen(
 
     # 3. 畫半透明 panel + 內容
     recharge_modal.draw(screen)
+
+    pygame.display.flip()
