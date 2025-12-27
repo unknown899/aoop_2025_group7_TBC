@@ -33,6 +33,7 @@ def perform_gacha():
                 "tank", 
                 "kp",
                 "rickroll",
+                "oiia",
                 ]
     result = {"won_id": None, "is_new": False, "msg": ""}
 
