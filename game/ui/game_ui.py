@@ -54,7 +54,7 @@ def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_tim
 
     calculated_button_rects = {}
 
-    # 繪製 10 個格子（上下兩排）
+# 繪製 10 個格子（上下兩排）
     for i in range(10):
         row = 0 if i < 5 else 1
         col = i % 5
@@ -62,41 +62,65 @@ def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_tim
         slot_y = upper_y if row == 0 else lower_y
         slot_rect = pygame.Rect(slot_x, slot_y, slot_width, slot_height)
 
-        # 儲存為出貓按鈕
+        # 儲存為出貓按鈕（只有已選貓咪才有）
         if i < len(selected_cats):
             cat_type = selected_cats[i]
             calculated_button_rects[cat_type] = slot_rect
 
         if i < len(selected_cats):
             cat_type = selected_cats[i]
+            cost = cat_costs.get(cat_type, 0)
+            cooldown = cat_cooldowns.get(cat_type, 0)
+            time_since = current_time - last_spawn_time.get(cat_type, 0)
 
-            # 格子背景
-            pygame.draw.rect(screen, (50, 100, 50), slot_rect, border_radius=15)
-            pygame.draw.rect(screen, (0, 255, 0), slot_rect, 3, border_radius=15)
+            # 判斷格子狀態
+            on_cooldown = cooldown > 0 and time_since < cooldown
+            cannot_afford = current_budget < cost
 
-            # 小圖片
+            if on_cooldown or cannot_afford:
+                # 冷卻中 或 錢不夠 → 灰色
+                bg_color = (80, 80, 80)
+                border_color = (150, 150, 150)
+            else:
+                # 可出擊 → 綠色
+                bg_color = (50, 100, 50)
+                border_color = (0, 255, 0)
+
+            # 畫格子背景與邊框
+            pygame.draw.rect(screen, bg_color, slot_rect, border_radius=15)
+            pygame.draw.rect(screen, border_color, slot_rect, 3, border_radius=15)
+
+            # 小圖片（稍微變暗如果不可用）
             if cat_type in cat_images:
                 small_img = pygame.transform.scale(cat_images[cat_type], (50, 50))
+                if on_cooldown or cannot_afford:
+                    # 加灰色遮罩表示不可用
+                    overlay = pygame.Surface((50, 50), pygame.SRCALPHA)
+                    overlay.fill((0, 0, 0, 100))  # 半透明黑
+                    small_img.blit(overlay, (0, 0))
                 screen.blit(small_img, (slot_x + 10, slot_y + 10))
 
             # 快捷鍵數字
             key_num = str(i + 1) if i < 9 else "0"
-            key_text = font.render(key_num, True, (255, 255, 0))
+            key_color = (200, 200, 200) if on_cooldown or cannot_afford else (255, 255, 0)
+            key_text = font.render(key_num, True, key_color)
             screen.blit(key_text, (slot_x + 70, slot_y + 10))
 
-            # 名稱（白色 + 黑色描邊）
+            # 名稱（不可用時變灰）
             name_str = cat_type.replace('_', ' ').title()
-            name_surf = font.render(name_str, True, (255, 255, 255))
-            # 黑描邊
+            name_color = (180, 180, 180) if on_cooldown or cannot_afford else (255, 255, 255)
+            name_surf = font.render(name_str, True, name_color)
+            # 黑描邊（讓文字更清楚）
             outline_offsets = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
             for dx, dy in outline_offsets:
                 outline = font.render(name_str, True, (0, 0, 0))
                 screen.blit(outline, (slot_x + 10 + dx, slot_y + 35 + dy))
             screen.blit(name_surf, (slot_x + 10, slot_y + 35))
 
-            # 成本（金色 + 黑色描邊）
-            cost_str = f"$ {cat_costs.get(cat_type, 0)}"
-            cost_surf = font.render(cost_str, True, (255, 215, 0))
+            # 成本（不可用時變紅/灰）
+            cost_color = (150, 150, 150) if cannot_afford else (255, 215, 0)
+            cost_str = f"$ {cost}"
+            cost_surf = font.render(cost_str, True, cost_color)
             cost_x = slot_x + slot_width - cost_surf.get_width() - 10
             cost_y = slot_y + 35
             for dx, dy in outline_offsets:
@@ -104,18 +128,17 @@ def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_tim
                 screen.blit(outline, (cost_x + dx, cost_y + dy))
             screen.blit(cost_surf, (cost_x, cost_y))
 
-            # 冷卻條
-            cooldown = cat_cooldowns.get(cat_type, 0)
-            time_since = current_time - last_spawn_time.get(cat_type, 0)
-            if cooldown > 0 and time_since < cooldown:
+            # 冷卻條（只有冷卻中才顯示）
+            if on_cooldown:
                 progress = time_since / cooldown
                 bar_w = slot_width - 20
                 bar_y = slot_y + slot_height - 15
                 pygame.draw.rect(screen, (100, 0, 0), (slot_x + 10, bar_y, bar_w, 10))
                 pygame.draw.rect(screen, (0, 255, 0), (slot_x + 10, bar_y, int(bar_w * progress), 10))
                 pygame.draw.rect(screen, (255, 255, 255), (slot_x + 10, bar_y, bar_w, 10), 2)
+
         else:
-            # 未選位置
+            # 未選位置：灰色虛框
             pygame.draw.rect(screen, (70, 70, 70), slot_rect, border_radius=15, width=3)
             empty_text = font.render("?", True, (150, 150, 150))
             screen.blit(empty_text, empty_text.get_rect(center=slot_rect.center))
