@@ -167,6 +167,8 @@ class RechargeModal:
             return "quit"
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            if self.success:
+                return None  # 成功視窗時不處理點擊事件
             # 點擊取消/離開
             if self.cancel_rect.collidepoint(event.pos):
                 return "close"
