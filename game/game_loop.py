@@ -596,6 +596,10 @@ async def main_game_loop(screen, clock):
                 gacha_fade_alpha,
                 key_action_sfx
             )
+            # print(gacha_result, type(gacha_result))
+            if gacha_result and gacha_result['won_id'] not in unlocked_cats:
+                unlocked_cats.add(gacha_result['won_id'])  # 解鎖貓咪
+
             if new_state == "main_menu":
                 game_state = "main_menu"
                 gacha_is_anim_playing = False
