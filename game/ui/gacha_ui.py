@@ -93,8 +93,15 @@ def draw_gacha_screen(
     # -------------------------
     # 畫面繪製
     # -------------------------
-    screen.blit(gacha_bg, (0, 0))
+    if gacha_show_result or gacha_is_fading:
+        screen.blit(gacha_afterbg, (0, 0))  # 或另一張 result_bg
+    elif not gacha_is_fading and not gacha_is_anim_playing:
+        screen.blit(gacha_bg, (0, 0))
 
+    gold_text = select_font.render(f"Gold: {player_data['gold']}", True, (255, 215, 0))
+    soul_text = select_font.render(f"Souls: {player_data['souls']}", True, (200, 100, 255))
+    screen.blit(gold_text, (SCREEN_WIDTH - 610, 553))
+    screen.blit(soul_text, (SCREEN_WIDTH - 300, 553))
     
 
     # 轉蛋按鈕
@@ -139,14 +146,9 @@ def draw_gacha_screen(
             gacha_is_fading = False
             gacha_show_result = True
     
-    if gacha_show_result:
-        screen.blit(gacha_afterbg, (0, 0))  # 或另一張 result_bg
-
-    gold_text = select_font.render(f"Gold: {player_data['gold']}", True, (255, 215, 0))
-    soul_text = select_font.render(f"Souls: {player_data['souls']}", True, (200, 100, 255))
-    screen.blit(gold_text, (SCREEN_WIDTH - 610, 553))
-    screen.blit(soul_text, (SCREEN_WIDTH - 300, 553))
     
+    
+
     if gacha_show_result and gacha_result:
 
         msg = gacha_result["msg"]
@@ -158,7 +160,7 @@ def draw_gacha_screen(
                 f"./cat_folder/{gacha_result['won_id']}/cat_gacha.png"
             ).convert_alpha()
 
-            new_size = (600, int(cat_img.get_height() * 600/cat_img.get_width()))
+            new_size = (400, int(cat_img.get_height() * 400/cat_img.get_width()))
             cat_img = pygame.transform.scale(cat_img, new_size)
             
             cat_rect = cat_img.get_rect(
