@@ -4,6 +4,10 @@ import pygame
 import json
 import time
 
+from ..gacha_manager import perform_gacha
+from ..constants import GACHA_COST_GOLD, GACHA_COST_SOULS, RESOURCE_FILE, gacha_bg, gacha_afterbg
+
+
 def draw_gacha_developing_screen(
     screen,
     select_font,
@@ -66,7 +70,6 @@ def draw_gacha_screen(
     screen,
     select_font,
     font,
-    gacha_bg,
     gacha_anim_player,
     gacha_is_anim_playing,
     gacha_result,
@@ -75,12 +78,9 @@ def draw_gacha_screen(
     gacha_fade_alpha,
     key_action_sfx=None
 ):
-    from ..gacha_manager import perform_gacha
-    from ..constants import GACHA_COST_GOLD, GACHA_COST_SOULS, RESOURCE_FILE
-
+    
     SCREEN_WIDTH = screen.get_width()
     SCREEN_HEIGHT = screen.get_height()
-
     # -------------------------
     # 讀取資源
     # -------------------------
@@ -143,7 +143,7 @@ def draw_gacha_screen(
             gacha_show_result = True
     
     if gacha_show_result:
-        screen.blit(gacha_bg, (0, 0))  # 或另一張 result_bg
+        screen.blit(gacha_afterbg, (0, 0))  # 或另一張 result_bg
 
     if gacha_show_result and gacha_result:
 

@@ -151,7 +151,7 @@ async def main_game_loop(screen, clock):
     from .battle_logic import update_battle
     from .ui import draw_game_ui, draw_pause_menu, draw_end_screen, draw_intro_screen, draw_ending_animation, draw_level_selection
     from .entities import cat_types, cat_costs, cat_cooldowns, levels, enemy_types, YManager, CSmokeEffect, load_cat_images, OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy, EnemySpawner, CannonSkill, CannonIcon
-    from game.constants import csmoke_images1, csmoke_images2, cannon_images, icon_cfg, gacha_background, gacha_anim_player
+    from game.constants import csmoke_images1, csmoke_images2, cannon_images, icon_cfg, gacha_anim_player
 
     # Battle variables
     cats = []
@@ -588,7 +588,6 @@ async def main_game_loop(screen, clock):
                 screen,
                 select_font,
                 font,
-                gacha_background,
                 gacha_anim_player,
                 gacha_is_anim_playing,
                 gacha_result,

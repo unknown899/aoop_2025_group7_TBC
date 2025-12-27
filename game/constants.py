@@ -20,8 +20,14 @@ cannon_images = load_cannonskill_images(
 )
 
 # 載入轉蛋背景，並強制縮放為螢幕大小
-gacha_background = load_single_image(
+gacha_bg = load_single_image(
     path="images/background/gacha_bg.jpg", 
+    size=(1280, 600),
+    convert_alpha=False  # 背景通常不透明，False 可微幅提升效能
+)
+# 載入轉蛋後背景，並強制縮放為螢幕大小
+gacha_afterbg = load_single_image(
+    path="images/background/gacha_afterbg.jpg", 
     size=(1280, 600),
     convert_alpha=False  # 背景通常不透明，False 可微幅提升效能
 )
