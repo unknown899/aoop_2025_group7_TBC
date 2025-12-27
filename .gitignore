@@ -9,3 +9,8 @@
 .pytest_cache/
 .cache/
 
+completed_levels.json
+data/player_unlocked_cats.json
+data/player_resources.json
+data/first_clear_rewards.json
+data/wallet_level.json
