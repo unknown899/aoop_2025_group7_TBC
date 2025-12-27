@@ -49,7 +49,7 @@ icon_cfg = {
 
 # Gacha cost constants
 GACHA_COST_GOLD = 500
-GACHA_COST_SOULS = 5
+GACHA_COST_SOULS = 200
 
 
 # constants.py 的所在資料夾 → game/
