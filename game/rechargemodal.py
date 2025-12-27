@@ -14,9 +14,9 @@ class RechargeModal:
 
         # ----------------- 儲值方案 -----------------
         self.packs = [
-            {"gold": 300, "price": "NT$30"},
-            {"gold": 1800, "price": "NT$150"},
-            {"gold": 4000, "price": "NT$300"},
+            {"gold": 300, "souls": 100, "price": "NT$30"},
+            {"gold": 1800, "souls": 700, "price": "NT$150"},
+            {"gold": 4000, "souls": 1600, "price": "NT$300"},
         ]
         for pack in self.packs:
             pack["rect"] = pygame.Rect(0,0,0,0)  # 先初始化，不然 draw 前 collidepoint 會爆
@@ -73,14 +73,14 @@ class RechargeModal:
 
         #card_title
         card_title = self.font3.render("Card Number:", True, (255, 255, 255))
-        screen.blit(card_title, (self.rect.x + 450, self.rect.y + 140))
+        screen.blit(card_title, (self.rect.x + 500, self.rect.y + 140))
 
         # 繪製儲值方案
         for i, pack in enumerate(self.packs):
             # 計算按鈕位置
-            btn_x = self.rect.x + 50
+            btn_x = self.rect.x + 20
             btn_y = self.rect.y + 200 + i * 60
-            btn_w = 300
+            btn_w = 430
             btn_h = 45
             pack["rect"] = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
 
@@ -94,10 +94,10 @@ class RechargeModal:
             pygame.draw.rect(screen, border_color, pack["rect"], 3, border_radius=8)
 
             # 文字
-            txt = self.font2.render(f"{pack['gold']} Gold ({pack['price']})", True, (255, 255, 255))
+            txt = self.font2.render(f"{pack['gold']} Gold {pack['souls']} Souls ({pack['price']})", True, (255, 255, 255))
             screen.blit(txt, txt.get_rect(center=pack["rect"].center))
         # 信用卡輸入框
-        input_rect = pygame.Rect(self.rect.x + 450, self.rect.y + 220, 260, 50)
+        input_rect = pygame.Rect(self.rect.x + 500, self.rect.y + 220, 300, 50)
         pygame.draw.rect(screen, (255, 255, 255), input_rect, 2, border_radius=6)
         card_text = self.format_card_number()
         render = self.font2.render(card_text, True, (255, 255, 255))
@@ -109,7 +109,7 @@ class RechargeModal:
             pygame.draw.line(screen, (255, 255, 255), (cursor_x, input_rect.y + 10), (cursor_x, input_rect.y + 40), 2)
 
         # 確認按鈕（灰/亮）
-        self.confirm_rect = pygame.Rect(self.rect.x + 450, self.rect.y + 300, 120, 40)
+        self.confirm_rect = pygame.Rect(self.rect.x + 500, self.rect.y + 300, 120, 40)
         if self.selected_pack and len(self.card_digits) == 16:
             confirm_color = (50, 200, 50)  # 可點亮
         else:
@@ -220,6 +220,7 @@ class RechargeModal:
             data = json.load(f)
 
         data["gold"] += self.selected_pack["gold"]
+        data["souls"] += self.selected_pack["souls"]
 
         with open(self.resource_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
