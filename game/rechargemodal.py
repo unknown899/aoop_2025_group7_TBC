@@ -8,25 +8,31 @@ class RechargeModal:
         self.resource_file = resource_file
         self.font = font
 
-        # 儲值方案
+        # ----------------- 儲值方案 -----------------
         self.packs = [
             {"gold": 300, "price": "NT$30"},
             {"gold": 1800, "price": "NT$150"},
             {"gold": 4000, "price": "NT$300"},
         ]
+        for pack in self.packs:
+            pack["rect"] = pygame.Rect(0,0,0,0)  # 先初始化，不然 draw 前 collidepoint 會爆
 
-        # 信用卡輸入
+        self.selected_pack = None  # 選中的方案
+
+        # ----------------- 信用卡輸入 -----------------
         self.card_digits = ""
         self.cursor_visible = True
         self.last_cursor_toggle = time.time()
 
-        # 狀態
-        self.selected_pack = None
-        self.success = False
+        # ----------------- 按鈕 -----------------
+        self.confirm_rect = pygame.Rect(0,0,0,0)  # 確認按鈕（draw 會更新位置）
+        self.cancel_rect = pygame.Rect(0,0,0,0)   # 取消按鈕（draw 會更新位置）
 
-        # 成功動畫
+        # ----------------- 儲值成功動畫 -----------------
+        self.success = False
         self.fade_alpha = 0
         self.fading = False
+
 
     # ---------- 更新 ----------
     def update(self):
@@ -44,7 +50,7 @@ class RechargeModal:
 
     # ---------- 繪製 ----------
     def draw(self, screen):
-        # 半透明 panel
+        # 畫半透明 panel
         panel = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         panel.fill((0, 0, 0, 180))
         screen.blit(panel, self.rect.topleft)
@@ -53,82 +59,122 @@ class RechargeModal:
         title = self.font.render("Recharge", True, (255, 255, 255))
         screen.blit(title, (self.rect.x + 20, self.rect.y + 20))
 
-        # 儲值方案
-        for i, pack in enumerate(self.packs):
-            btn = pygame.Rect(
-                self.rect.x + 50,
-                self.rect.y + 80 + i * 60,
-                200,
-                45
-            )
-            pygame.draw.rect(screen, (80, 80, 160), btn, border_radius=8)
-            txt = self.font.render(
-                f"{pack['gold']} Gold ({pack['price']})",
-                True,
-                (255, 255, 255)
-            )
-            screen.blit(txt, txt.get_rect(center=btn.center))
-            pack["rect"] = btn
+        #儲值提示
+        hint = self.font.render("Select a pack and enter card number:", True, (255, 255, 255))
+        screen.blit(hint, (self.rect.x + 20, self.rect.y + 60))
 
+        # 繪製儲值方案
+        for i, pack in enumerate(self.packs):
+            # 計算按鈕位置
+            btn_x = self.rect.x + 50
+            btn_y = self.rect.y + 80 + i * 60
+            btn_w = 200
+            btn_h = 45
+            pack["rect"] = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+
+            # 按鈕顏色
+            btn_color = (80, 80, 160)
+            border_color = (255, 255, 255)
+            if self.selected_pack == pack:
+                border_color = (255, 215, 0)  # 高亮
+
+            pygame.draw.rect(screen, btn_color, pack["rect"], border_radius=8)
+            pygame.draw.rect(screen, border_color, pack["rect"], 3, border_radius=8)
+
+            # 文字
+            txt = self.font.render(f"{pack['gold']} Gold ({pack['price']})", True, (255, 255, 255))
+            screen.blit(txt, txt.get_rect(center=pack["rect"].center))
         # 信用卡輸入框
         input_rect = pygame.Rect(self.rect.x + 300, self.rect.y + 100, 260, 50)
         pygame.draw.rect(screen, (255, 255, 255), input_rect, 2, border_radius=6)
-
         card_text = self.format_card_number()
         render = self.font.render(card_text, True, (255, 255, 255))
         screen.blit(render, (input_rect.x + 10, input_rect.y + 10))
 
-        # 游標
+        # 游標閃爍
         if self.cursor_visible and len(self.card_digits) < 16:
             cursor_x = input_rect.x + 10 + render.get_width() + 2
-            pygame.draw.line(
-                screen,
-                (255, 255, 255),
-                (cursor_x, input_rect.y + 10),
-                (cursor_x, input_rect.y + 40),
-                2
-            )
+            pygame.draw.line(screen, (255, 255, 255), (cursor_x, input_rect.y + 10), (cursor_x, input_rect.y + 40), 2)
 
-        # 成功動畫（白 → 淡出）
+        # 確認按鈕（灰/亮）
+        self.confirm_rect = pygame.Rect(self.rect.x + 300, self.rect.y + 180, 120, 40)
+        if self.selected_pack and len(self.card_digits) == 16:
+            confirm_color = (50, 200, 50)  # 可點亮
+        else:
+            confirm_color = (100, 100, 100)  # 灰色
+
+        pygame.draw.rect(screen, confirm_color, self.confirm_rect, border_radius=6)
+        confirm_txt = self.font.render("Confirm", True, (255, 255, 255))
+        screen.blit(confirm_txt, confirm_txt.get_rect(center=self.confirm_rect.center))
+
+        # 取消按鈕
+        self.cancel_rect = pygame.Rect(self.rect.right - 110, self.rect.y + 20, 90, 35)
+        pygame.draw.rect(screen, (150, 60, 60), self.cancel_rect, border_radius=6)
+        cancel_text = self.font.render("Cancel", True, (255, 255, 255))
+        screen.blit(cancel_text, cancel_text.get_rect(center=self.cancel_rect.center))
+
+        # 成功儲值畫面
         if self.fade_alpha > 0:
             fade = pygame.Surface(screen.get_size())
             fade.fill((255, 255, 255))
             fade.set_alpha(self.fade_alpha)
             screen.blit(fade, (0, 0))
+            msg = self.font.render(f"Recharge Success! +{self.selected_pack['gold']} Gold", True, (0, 0, 0))
+            screen.blit(msg, msg.get_rect(center=screen.get_rect().center))
+            enter_msg = self.font.render("Press Enter to close", True, (0, 0, 0))
+            screen.blit(enter_msg, enter_msg.get_rect(center=(screen.get_rect().centerx, screen.get_rect().centery+50)))
 
-            msg = self.font.render("Recharge Success!", True, (0, 0, 0))
-            screen.blit(
-                msg,
-                msg.get_rect(center=screen.get_rect().center)
-            )
 
     # ---------- 事件 ----------
     def handle_event(self, event):
 
+        # 視窗關閉
         if event.type == pygame.QUIT:
             return "quit"
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            # 點擊取消/離開
+            if self.cancel_rect.collidepoint(event.pos):
+                return "close"
+
+            # 點擊儲值方案（一次只選一個）
             for pack in self.packs:
                 if pack["rect"].collidepoint(event.pos):
-                    self.selected_pack = pack
-         
+                    # 選中 → 如果已選同一個則取消
+                    if self.selected_pack == pack:
+                        self.selected_pack = None
+                    else:
+                        self.selected_pack = pack
+
+            # 點擊確認按鈕
+            if self.confirm_rect.collidepoint(event.pos):
+                if self.selected_pack and len(self.card_digits) == 16:
+                    self.perform_recharge()
+
         elif event.type == pygame.KEYDOWN:
+            # 儲值成功後 Enter 離開
             if self.success:
                 if event.key == pygame.K_RETURN:
                     return "close"
 
-            elif event.key == pygame.K_BACKSPACE:
-                self.card_digits = self.card_digits[:-1]
-
-            elif event.key == pygame.K_RETURN:
-                if self.selected_pack and len(self.card_digits) == 16:
-                    self.perform_recharge()
-
-            elif event.unicode.isdigit() and len(self.card_digits) < 16:
-                self.card_digits += event.unicode
+            # 輸入中
+            else:
+                if event.key == pygame.K_ESCAPE:
+                    return "close"
+                elif event.key == pygame.K_BACKSPACE:
+                    self.card_digits = self.card_digits[:-1]
+                elif event.unicode.isdigit() and len(self.card_digits) < 16:
+                    self.card_digits += event.unicode
 
         return None
 
+
+    def reset(self):
+        self.card_digits = ""
+        self.selected_pack = None
+        self.success = False
+        self.fade_alpha = 0
+        self.fading = False
     # ---------- 工具 ----------
     def format_card_number(self):
         s = self.card_digits

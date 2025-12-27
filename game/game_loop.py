@@ -631,6 +631,7 @@ async def main_game_loop(screen, clock):
                 ret = recharge_modal.handle_event(event)
                 if ret == "close":
                     game_state = previous_game_state
+                    recharge_modal.reset()
                 elif ret == "quit":
                     return
 
