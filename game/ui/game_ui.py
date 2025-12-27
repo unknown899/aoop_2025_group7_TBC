@@ -22,7 +22,7 @@ def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_tim
 
     # === 預算顯示（右上角）===
     current_max = wallet_upgrade_table[wallet_level - 1]["max_budget"] if wallet_upgrade_table and wallet_level <= len(wallet_upgrade_table) else 16500
-    budget_text = budget_font.render(f"預算: {current_budget}/{current_max}", True, (255, 215, 0))
+    budget_text = budget_font.render(f"budget: {current_budget}/{current_max}", True, (255, 215, 0))
     screen.blit(budget_text, (SCREEN_WIDTH - budget_text.get_width() - 50, 20))
 
     # === 最下方整條：出擊陣容（格子大小與選貓畫面一致）===
@@ -219,7 +219,7 @@ def draw_game_ui(screen, current_level, current_budget, enemy_tower, current_tim
     except:
         pygame.draw.rect(screen, (100, 100, 255), pause_rect, border_radius=20)
         pygame.draw.rect(screen, (200, 200, 255), pause_rect, 6, border_radius=20)
-        pause_surf = budget_font.render("暫停", True, (255, 255, 255))
+        pause_surf = budget_font.render("pulse", True, (255, 255, 255))
         screen.blit(pause_surf, pause_surf.get_rect(center=pause_rect.center))
 
     return pause_rect, calculated_button_rects, camera_offset_x, upgrade_rect

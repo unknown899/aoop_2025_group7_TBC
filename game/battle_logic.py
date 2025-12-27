@@ -459,4 +459,4 @@ def update_battle(cats, enemies, our_tower, enemy_tower, now, souls, cat_y_manag
         our_tower.hp = 0
 
     # 返回更新後的震波特效列表。
-    return shockwave_effects
+    return shockwave_effects, current_budget

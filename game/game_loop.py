@@ -96,6 +96,7 @@ async def main_game_loop(screen, clock):
     global selected_cats, selected_level, game_state, intro_start_time
     global current_bgm_path, boss_music_active, boss_shockwave_played
     global wallet_level, total_budget_limitation, budget_rate
+    global index_of_earned_rewards
     gacha_is_anim_playing = False
     gacha_is_fading = False          # 白畫面淡出中
     gacha_show_result = False        # 顯示結果中
@@ -258,6 +259,10 @@ async def main_game_loop(screen, clock):
         'hit_tower': pygame.mixer.Sound("audio/TBC/022.ogg") if os.path.exists("audio/TBC/022.ogg") else None,
         'unit_die': pygame.mixer.Sound("audio/TBC/023.ogg") if os.path.exists("audio/TBC/023.ogg") else None
     }
+    getReward_sfx = {
+        "reward": pygame.mixer.Sound("audio/TBC/029.ogg") if os.path.exists("audio/TBC/029.ogg") else None
+    }
+
     for sfx in battle_sfx.values():
         if sfx:
             sfx.set_volume(0.7)
@@ -777,7 +782,7 @@ async def main_game_loop(screen, clock):
                 enemy.update_status_effects(current_time)
 
             # 戰鬥邏輯更新（包含炮台）
-            shockwave_effects = update_battle(
+            shockwave_effects, current_budget = update_battle(
                 cats, enemies, our_tower, enemy_tower, current_time, souls,
                 cat_y_manager, enemy_y_manager, cannon, shockwave_effects, current_budget, battle_sfx
             )
@@ -826,6 +831,7 @@ async def main_game_loop(screen, clock):
                 if status != "victory":
                     status = "victory"
                     game_state = "end"
+                    index_of_earned_rewards = 0
                     pygame.mixer.music.stop()
                     current_bgm_path = None
                     boss_music_active = False
@@ -840,7 +846,7 @@ async def main_game_loop(screen, clock):
                         print("勝利音效未載入！檢查 audio/TBC/008.ogg")
                     clear_time_seconds = (current_time - level_start_time) / 1000
                     reward_data = LEVEL_REWARDS.get(selected_level, {})
-                    print(f"關卡 {selected_level} 獲得獎勵資料: {reward_data}")
+                    # print(f"關卡 {selected_level} 獲得獎勵資料: {reward_data}")
                     earned_rewards = []
                     total_gold_earned = 0
                     total_souls_earned = 0
@@ -896,14 +902,14 @@ async def main_game_loop(screen, clock):
                     for idx, fc in enumerate(reward_data.get("speed_bonus", [])):
                         time_limit = fc.get("threshold", 0)
                         if clear_time_seconds <= time_limit and (idx not in claimed_first_clear[str(selected_level)][1]):
-                            reward_gold = fc.get("reward", {}).get("gold", 0)
-                            reward_souls = fc.get("reward", {}).get("souls", 0)
+                            reward_gold = fc.get("gold", 0)
+                            reward_souls = fc.get("souls", 0)
                             total_gold_earned += reward_gold
                             total_souls_earned += reward_souls
                             if reward_gold or reward_souls:
                                 earned_rewards.append(f"Speed Bonus: +{reward_gold} Gold + {reward_souls} Souls")
 
-                            reward_new_cat = fc.get("reward", {}).get("unlock_cat")
+                            reward_new_cat = fc.get("unlock_cat")
                             if reward_new_cat and reward_new_cat not in unlocked_cats:
                                 unlocked_cats.add(reward_new_cat)
                                 newly_unlocked_cat = reward_new_cat
@@ -918,6 +924,7 @@ async def main_game_loop(screen, clock):
                     player_resources["souls"] += total_souls_earned
                     player_resources["gold"] += total_gold_earned
                     # 儲存所有記錄
+                    # print(earned_rewards)
                     try:
                         with open(PLAYER_RESOURCES_FILE, "w") as f:
                             json.dump({
@@ -967,23 +974,43 @@ async def main_game_loop(screen, clock):
             is_last_level = selected_level == len(levels) - 1
             victory_display_time = getattr(pygame.time, "victory_display_time", 0)
 
+            num_of_earned_rewards = len(earned_rewards) if status == "victory" else 0
             is_first_victory = selected_level not in completed_levels
 
             if status == "victory" and victory_display_time == 0:
                 pygame.time.victory_display_time = pygame.time.get_ticks()
             continue_rect = draw_end_screen(screen, current_level, status, end_font, font, our_tower, enemy_tower, victory_display_time, camera_offset_x)
 
-            if status == "victory" and earned_rewards:
-                reward_y = 280
-                title_surf = end_font.render("Rewards Earned!", True, (255, 255, 100))
-                screen.blit(title_surf, (SCREEN_WIDTH // 2 - title_surf.get_width() // 2, reward_y))
-                reward_y += 100
-                for reward_text in earned_rewards:
-                    text_surf = select_font.render(reward_text, True, (255, 255, 200))
+            if status == "victory" and num_of_earned_rewards:
+                if index_of_earned_rewards < num_of_earned_rewards:
+                    reward_y = 400
+                    # title_surf = end_font.render("Rewards Earned!", True, (255, 255, 100))
+                    # screen.blit(title_surf, (SCREEN_WIDTH // 2 - title_surf.get_width() // 2, reward_y))
+                    # reward_y += 100
+                    # for reward_text in earned_rewards:
+                    #     text_surf = select_font.render(reward_text, True, (255, 255, 200))
+                    #     screen.blit(text_surf, (SCREEN_WIDTH // 2 - text_surf.get_width() // 2, reward_y))
+                    #     reward_y += 60
+
+                    text_surf = select_font.render(earned_rewards[index_of_earned_rewards], True, (255, 255, 100))
+                    # 1. 先畫灰色填充底色 (填滿矩形)
+                    rect = pygame.Rect(SCREEN_WIDTH // 2 - text_surf.get_width() // 2 - 10, reward_y - 10,
+                                    text_surf.get_width() + 20, text_surf.get_height() + 20)
+                    pygame.draw.rect(screen, (50, 50, 50), rect) # 灰底
+
+                    # 2. 畫黑色最外圈邊框 (厚度為 2)
+                    pygame.draw.rect(screen, (0, 0, 0), rect, 2) # 黑邊
+
+                    # 3. 畫白色內圈邊框 (選用，增加質感)
+                    # 將矩形縮小 1 像素來畫細白邊，會有一種立體感
+                    inner_rect = rect.inflate(-2, -2) 
+                    pygame.draw.rect(screen, (200, 200, 200), inner_rect, 1) # 淺灰或白色內邊
+                    
                     screen.blit(text_surf, (SCREEN_WIDTH // 2 - text_surf.get_width() // 2, reward_y))
-                    reward_y += 60
-                total_text = select_font.render(f"Total: {total_gold_earned} Gold + {total_souls_earned} Souls", True, (255, 255, 0))
-                screen.blit(total_text, (SCREEN_WIDTH // 2 - total_text.get_width() // 2, reward_y + 20))
+                    # total_text = select_font.render(f"Total: {total_gold_earned} Gold + {total_souls_earned} Souls", True, (255, 255, 0))
+                    # screen.blit(total_text, (SCREEN_WIDTH // 2 - total_text.get_width() // 2, reward_y + 20))
+                else:
+                    pass  # 全部獎勵已顯示完畢
 
             pygame.display.flip()
 
@@ -993,31 +1020,36 @@ async def main_game_loop(screen, clock):
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
                         if status == "victory":
-                            completed_levels.add(selected_level)
-                            try:
-                                with open(save_file, "w") as f:
-                                    json.dump(list(completed_levels), f)
-                            except Exception as e:
-                                print(f"Save error: {e}")
-                            if status == "victory" and is_last_level and is_first_victory:
-                                game_state = "ending"
-                                pygame.time.ending_start_time = pygame.time.get_ticks()
+                            if num_of_earned_rewards > 0 and index_of_earned_rewards < num_of_earned_rewards:
+                                index_of_earned_rewards += 1
+                                if getReward_sfx.get('reward'):
+                                    getReward_sfx['reward'].play()
                             else:
-                                game_state = "main_menu"
-                                our_tower = None
-                                enemy_tower = None
-                                cats.clear()
-                                enemies.clear()
-                                souls.clear()
-                                shockwave_effects.clear()
-                                current_budget = 1000
-                                pygame.mixer.music.stop()
-                                current_bgm_path = None
-                                boss_music_active = False
-                                boss_shockwave_played = False
-                                setattr(pygame.time, "victory_display_time", 0)
-                                if key_action_sfx.get('other_button'):
-                                    key_action_sfx['other_button'].play()
+                                completed_levels.add(selected_level)
+                                try:
+                                    with open(save_file, "w") as f:
+                                        json.dump(list(completed_levels), f)
+                                except Exception as e:
+                                    print(f"Save error: {e}")
+                                if status == "victory" and is_last_level and is_first_victory:
+                                    game_state = "ending"
+                                    pygame.time.ending_start_time = pygame.time.get_ticks()
+                                else:
+                                    game_state = "main_menu"
+                                    our_tower = None
+                                    enemy_tower = None
+                                    cats.clear()
+                                    enemies.clear()
+                                    souls.clear()
+                                    shockwave_effects.clear()
+                                    current_budget = 1000
+                                    pygame.mixer.music.stop()
+                                    current_bgm_path = None
+                                    boss_music_active = False
+                                    boss_shockwave_played = False
+                                    setattr(pygame.time, "victory_display_time", 0)
+                                    if key_action_sfx.get('other_button'):
+                                        key_action_sfx['other_button'].play()
                         elif status == "lose":
                             game_state = "main_menu"
                             our_tower = None
@@ -1039,31 +1071,34 @@ async def main_game_loop(screen, clock):
                     pos = event.pos
                     if continue_rect and continue_rect.collidepoint(pos):
                         if status == "victory":
-                            completed_levels.add(selected_level)
-                            try:
-                                with open(save_file, "w") as f:
-                                    json.dump(list(completed_levels), f)
-                            except Exception as e:
-                                print(f"Save error: {e}")
-                            if status == "victory" and is_last_level and is_first_victory:
-                                game_state = "ending"
-                                pygame.time.ending_start_time = pygame.time.get_ticks()
+                            if num_of_earned_rewards > 0 and index_of_earned_rewards < num_of_earned_rewards:
+                                pass
                             else:
-                                game_state = "main_menu"
-                                our_tower = None
-                                enemy_tower = None
-                                cats.clear()
-                                enemies.clear()
-                                souls.clear()
-                                shockwave_effects.clear()
-                                current_budget = 1000
-                                pygame.mixer.music.stop()
-                                current_bgm_path = None
-                                boss_music_active = False
-                                boss_shockwave_played = False
-                                setattr(pygame.time, "victory_display_time", 0)
-                                if key_action_sfx.get('other_button'):
-                                    key_action_sfx['other_button'].play()
+                                completed_levels.add(selected_level)
+                                try:
+                                    with open(save_file, "w") as f:
+                                        json.dump(list(completed_levels), f)
+                                except Exception as e:
+                                    print(f"Save error: {e}")
+                                if status == "victory" and is_last_level and is_first_victory:
+                                    game_state = "ending"
+                                    pygame.time.ending_start_time = pygame.time.get_ticks()
+                                else:
+                                    game_state = "main_menu"
+                                    our_tower = None
+                                    enemy_tower = None
+                                    cats.clear()
+                                    enemies.clear()
+                                    souls.clear()
+                                    shockwave_effects.clear()
+                                    current_budget = 1000
+                                    pygame.mixer.music.stop()
+                                    current_bgm_path = None
+                                    boss_music_active = False
+                                    boss_shockwave_played = False
+                                    setattr(pygame.time, "victory_display_time", 0)
+                                    if key_action_sfx.get('other_button'):
+                                        key_action_sfx['other_button'].play()
                         elif status == "lose":
                             game_state = "main_menu"
                             our_tower = None
@@ -1080,6 +1115,15 @@ async def main_game_loop(screen, clock):
                             setattr(pygame.time, "victory_display_time", 0)
                             if key_action_sfx.get('other_button'):
                                 key_action_sfx['other_button'].play()
+                    elif status == "victory" and num_of_earned_rewards > 0 and index_of_earned_rewards < num_of_earned_rewards:
+                        index_of_earned_rewards += 1
+                        if getReward_sfx.get('reward'):
+                            if index_of_earned_rewards < num_of_earned_rewards - 1:
+                                getReward_sfx['reward'].play()
+                        if key_action_sfx.get('other_button'):
+                            if index_of_earned_rewards >= num_of_earned_rewards:
+                                key_action_sfx['other_button'].play()
+                                # getReward_sfx['other'].play()
 
         elif game_state == "ending":
             ending_start_time = getattr(pygame.time, "ending_start_time", pygame.time.get_ticks())
