@@ -92,15 +92,21 @@ gacha_anim_player = GachaAnimationPlayer(
     pos=(640, 300),
     frame_duration=150
 )
+visa_img = load_single_image(
+    path="images/visa.jpeg", 
+    size=(90, 50),
+    convert_alpha=False  # 去背透明
+)
 
 # 初始化充值視窗
 recharge_modal = RechargeModal(
-    panel_rect=pygame.Rect(190, 75, 900, 450),
+    panel_rect=pygame.Rect(180, 75, 920, 450),
     resource_file=RESOURCE_FILE,
     font1 = pygame.font.SysFont(None, 60),
     font2 = pygame.font.SysFont(None, 40),
     font3 = pygame.font.SysFont(None, 50),
-    success_rect=pygame.Rect(340, 200, 650, 250)
+    success_rect=pygame.Rect(340, 200, 650, 250),
+    visa_img=visa_img
 )
 recharge_bg = load_single_image(
     path="images/background/recharge_bg.jpg", 

@@ -3,7 +3,7 @@ import json
 import time
 
 class RechargeModal:
-    def __init__(self, panel_rect, resource_file, font1, font2, font3, success_rect):
+    def __init__(self, panel_rect, resource_file, font1, font2, font3, success_rect, visa_img):
         
         self.rect = panel_rect
         self.success_rect = success_rect
@@ -11,6 +11,7 @@ class RechargeModal:
         self.font1 = font1#bigger
         self.font2 = font2
         self.font3 = font3#middle
+        self.visa_img = visa_img
 
         # ----------------- 儲值方案 -----------------
         self.packs = [
@@ -99,11 +100,20 @@ class RechargeModal:
             txt = self.font2.render(f"{pack['gold']} Gold {pack['souls']} Souls ({pack['price']})", True, (255, 255, 255))
             screen.blit(txt, txt.get_rect(center=pack["rect"].center))
         # 信用卡輸入框
-        input_rect = pygame.Rect(self.rect.x + 500, self.rect.y + 220, 300, 50)
+        input_rect = pygame.Rect(self.rect.x + 600, self.rect.y + 220, 300, 50)
         pygame.draw.rect(screen, (255, 255, 255), input_rect, 2, border_radius=6)
         card_text = self.format_card_number()
         render = self.font2.render(card_text, True, (255, 255, 255))
         screen.blit(render, (input_rect.x + 10, input_rect.y + 10))
+        
+        # draw visa icon (與 input_rect 同高度、在左側一點)
+        visa_rect = self.visa_img.get_rect()
+        padding = 10
+        visa_pos = (
+            input_rect.left - visa_rect.width - padding,
+            input_rect.centery - visa_rect.height // 2
+        )
+        screen.blit(self.visa_img, visa_pos)
 
         # 游標閃爍
         if self.cursor_visible and len(self.card_digits) < 16:
