@@ -181,26 +181,26 @@ def draw_gacha_screen(
                 f"./images/fail_img.jpg"
             ).convert_alpha()
 
-            new_size = (400, int(fail_img.get_height() * 400/fail_img.get_width()))
+            new_size = (300, int(fail_img.get_height() * 300/fail_img.get_width()))
             fail_img = pygame.transform.scale(fail_img, new_size)
             
             fail_rect = fail_img.get_rect(
-                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)
+                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 )
             )
             screen.blit(fail_img, fail_rect)
             # 大字 msg
-            text = select_font.render(msg, True, (200, 215, 0))#different color for no win
+            text = select_font.render(msg, True, (255, 0, 0))#different color for no win
             screen.blit(
                 text,
                 text.get_rect(
-                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 140)
+                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 160)
                 )
             )
-        hint = font.render("Press ENTER to continue", True, (20, 180, 20))
+        hint = font.render("Press ENTER to continue", True, (216, 246, 144))
         screen.blit(
             hint,
             hint.get_rect(
-                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 80)
+                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 70)
             )
         )
     '''
