@@ -26,7 +26,14 @@ def perform_gacha():
         json.dump(data, f, indent=4)
 
     # 3. 抽獎
-    all_cats = ["basic", "speedy", "eraser", "mtank", "tank", "kp"]
+    all_cats = ["basic", 
+                "speedy", 
+                "eraser", 
+                "mtank", 
+                "tank", 
+                "kp",
+                "rickroll",
+                ]
     result = {"won_id": None, "is_new": False, "msg": ""}
 
     if random.random() < 0.5: # 20% 沒抽中
