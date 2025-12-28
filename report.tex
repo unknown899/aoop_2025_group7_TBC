@@ -1,0 +1,93 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+\title{AOOP Report - The Snail Adventure\
+{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and
+should not be used}
+\thanks{Identify applicable funding agency here. If none, delete this.}
+}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Yin-Wei Lee}
+\IEEEauthorblockA{\textit{Department of Electrophysics} \
+\textit{National Yang Ming Chiao Tung University}\
+Hsinchu, Taiwan \
+waynelee.ee11@nycu.edu.tw}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Bo-Wei Wang}
+\IEEEauthorblockA{\textit{Department of Electrophysics} \
+\textit{National Yang Ming Chiao Tung University}\
+Hsinchu, Taiwan \
+email@address.com}
+}
+
+\maketitle
+
+\begin{abstract}
+This paper introduces a tower defense game developed using Python and Pygame, named ``The Snail Adventure.'' The game combines strategy and fun, where players deploy characters to defend against enemy attacks. This paper details the game's design philosophy, core mechanisms, and implementation process, and discusses its applications and challenges in game development.
+\end{abstract}
+
+\begin{IEEEkeywords}
+tower defense game, Python, Pygame, OOP, The Snail Adventure
+\end{IEEEkeywords}
+
+\section{Introduction}
+``The Snail Adventure'' is a single-player tower defense game developed based on Pygame, adapted from the original Battle Cats game but themed around snails. The motivation for this research stems from the practical application of Object-Oriented Programming (OOP) principles, aiming to explore modular design, class encapsulation, and game logic control through game development. The background issue includes the monotony of traditional tower defense games; we introduce new elements such as a reward system, level selection, and gacha mechanics to enhance player experience. The main contributions include implementing a complete game loop, progress saving mechanisms, and applying OOP principles to improve code maintainability. GitHub link: https://github.com/unknown899/aoop_2025_group7_TBC.
+
+\section{Related Work}
+Related works include the original Battle Cats game by PONOS Corporation, which features cat-themed tower defense mechanics where players deploy units to resist enemy advances. Our game borrows its core gameplay, such as unit deployment, attack ranges, and tower health mechanisms, but adapts it to a snail theme and adds wallet upgrades, snail cannons, and left-right scrolling features. Additionally, we reference the level selection method from Super Mario, transforming traditional key-based selection into map hovering interactions to improve user interface friendliness. Other tower defense games like Plants vs. Zombies also provide inspiration in attack effects and unit diversity.
+
+\section{Proposed Method}
+The game design employs a modular structure with core classes including Cat (player units), Enemy (opponent units), Tower, Level, and YManager (coordinate manager). YManager embodies the single responsibility principle, using sqrt(x) to allocate y-coordinates to avoid unit overlaps. OOP principles applied: Encapsulation binds properties like hp and atk within classes; Inheritance and Polymorphism for unit movement and knock back (kb) methods; Abstraction integrates similar behaviors.
+
+Game logic is controlled by battle_logic.py, handling attack calculations and boss shockwaves. config.py stores unit values such as health, attack power, and range. rewards.py manages probabilistic drops, including gold, souls, and unit unlocks. Progress saving uses JSON files like completed_levels.json and player_unlocked_cat.json.
+
+Attack effects display based on type, such as electric (lightning), gas (poison), and shockwave. The main loop uses asyncio for non-blocking execution, controlling FPS.
+
+\section{Experimental Results}
+The game offers 5 levels, where players select battle, gacha, or recharge from the main menu. Level selection supports hovering to display information, and unit selection allows up to 10 units, deployed via shortcuts. In battles, snail cannons damage enemies, and wallet upgrades affect budget recovery speed.
+
+Testing shows that the kb mechanism effectively triggers unit retreats, and attack effects enhance visual experience. Upon victory, rewards are displayed sequentially, with a special ending for first clearing level 5. Progress saving allows resuming without restarting. Reset progress feature facilitates demos.
+
+\begin{table}[htbp]
+\caption{Example of Player Unit Properties}
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Unit} & \textbf{Health} & \textbf{Attack} & \textbf{Range} \
+\hline
+Basic Snail & Medium & Medium & Medium \
+Speedy Snail & Low & Medium & Small \
+Tank Snail & High & High & Large \
+\hline
+\end{tabular}
+\label{tab1}
+\end{center}
+\end{table}
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=0.7\linewidth]{fig1.png}}
+\caption{Example of game battle screen.}
+\label{fig}
+\end{figure}
+
+\section{Conclusion}
+This game successfully implements tower defense core mechanisms and applies OOP to enhance code quality. Future prospects include perfecting unit effects (e.g., attack reduction, slowing), adding fluctuation towers and other snail cannons, item systems, and infinite stage extension. Through this project, we demonstrate that Python and Pygame are suitable for small-scale game development, with potential future expansions to multiplayer modes or AI enemies.
+
+\section*{Acknowledgment}
+Thanks to the Department of Electrophysics at National Yang Ming Chiao Tung University for providing resource support, and to team members for their collaboration.
+
+\begin{thebibliography}{00}
+\bibitem{b1} PONOS Corporation, The Battle Cats,'' Mobile Game, 2014. \bibitem{b2} Pygame Community, Pygame Documentation,'' https://www.pygame.org/docs/, 2023.
+\bibitem{b3} IEEE, ``How to Create Your Conference Paper,'' IEEE Conference Templates, 2023.
+\end{thebibliography}
+
+\end{document}

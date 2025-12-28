@@ -8,7 +8,7 @@ cat_config = {
     "is_aoe": False,
     "kb_limit": 3,
     "cooldown": 4000,
-    "cost": 120,
+    "cost": 720,
     "width": 200,
     "height": 200,
     "windup_duration": 200,
