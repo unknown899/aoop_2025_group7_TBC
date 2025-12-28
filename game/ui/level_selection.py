@@ -37,9 +37,9 @@ def draw_level_selection(
     SCREEN_WIDTH, SCREEN_HEIGHT = screen.get_size()
 
     # 標題背景方塊
-    screen.blit(square_surface, (40, 90))
-    title = select_font.render("Select Level and Cats", True, (255, 255, 255))
-    screen.blit(title, (48, 45))
+    screen.blit(square_surface, (40, 60))
+    title = select_font.render("Select Cats", True, (255, 255, 255))
+    screen.blit(title, (48, 15))
 
     cat_rects = {}
     hovered_cats = []
@@ -47,7 +47,7 @@ def draw_level_selection(
 
     # === 左側：關卡列表 ===
     for i, level in enumerate(levels):
-        rect = pygame.Rect(50, 100 + i * 60, 200, 50)
+        rect = pygame.Rect(50, 70 + i * 60, 200, 50)
         is_playable = i == 0 or (i - 1) in completed_levels
         color = (100, 200, 100) if i == selected_level and is_playable else \
                 (70, 140, 70) if is_playable else \
@@ -60,30 +60,30 @@ def draw_level_selection(
 
     
     # === 底部：出擊陣容（嚴格按照你的邊框設定）===
-    lineup_y = SCREEN_HEIGHT - 200
-    lineup_height = 90
+    lineup_y = SCREEN_HEIGHT - 290
+    lineup_height = 100
     lineup_width = SCREEN_WIDTH - 500
 
     # 背景與外框
     lineup_bg = pygame.Surface((lineup_width, lineup_height * 2 + 20))
     lineup_bg.set_alpha(200)
     lineup_bg.fill((20, 20, 50))
-    screen.blit(lineup_bg, (200, lineup_y))
-    pygame.draw.rect(screen, (0, 200, 255), (200, lineup_y, lineup_width, lineup_height * 2 + 20), 5)
+    screen.blit(lineup_bg, (270, lineup_y))
+    pygame.draw.rect(screen, (0, 200, 255), (270, lineup_y, lineup_width, lineup_height * 2 + 20), 5)
 
     # 標題
     title_text = font.render("battle stage(press 1-0)", True, (255, 255, 100))
-    screen.blit(title_text, (210, lineup_y + 10))
+    screen.blit(title_text, (280, lineup_y + 6))
 
     # 格子設定
     slots_per_row = 5
     slot_width = 100
     slot_height = 60
     total_slots_width = slots_per_row * slot_width + (slots_per_row - 1) * 10
-    start_x = 200 + (lineup_width - total_slots_width) // 2
+    start_x = 270 + (lineup_width - total_slots_width) // 2
 
-    upper_y = lineup_y + 40
-    lower_y = upper_y + lineup_height + 10
+    upper_y = lineup_y + 30
+    lower_y = upper_y + lineup_height
 
     for i in range(10):
         row = i // 5
@@ -114,11 +114,11 @@ def draw_level_selection(
             screen.blit(empty_text, empty_text.get_rect(center=slot_rect.center))
 
     # === 右側四大按鈕（新增 Back to Menu）===
-    button_width = 280
+    button_width = 180
     button_height = 50
-    button_x = SCREEN_WIDTH - button_width - 50
+    button_x = SCREEN_WIDTH - button_width - 30
     button_spacing = 0
-    button_y = SCREEN_HEIGHT - button_height - 0
+    button_y = SCREEN_HEIGHT - button_height - 90
 
     # 從上到下：Back → Reset → Quit → Start
     back_rect  = pygame.Rect(button_x, button_y - (button_height + button_spacing) * 3, button_width, button_height)
@@ -152,7 +152,7 @@ def draw_level_selection(
 
     # 操作提示
     hint = font.render("Click cat to select (max 10) | Hover to preview | 1-0: Quick deploy", True, (200, 200, 255))
-    screen.blit(hint, (300, SCREEN_HEIGHT - 95))
+    screen.blit(hint, (280, SCREEN_HEIGHT - 95))
     # === 中間：貓咪選擇網格 ===
     idy = 0
     for cat_type in cat_types.keys():
@@ -161,7 +161,7 @@ def draw_level_selection(
 
         col = idy % 5
         row = idy // 5
-        rect = pygame.Rect(270 + col * 200, 100 + row * 80, 180, 70)
+        rect = pygame.Rect(270 + col * 200, 70 + row * 80, 180, 70)
         cat_rects[cat_type] = rect
 
         is_selected = cat_type in selected_cats

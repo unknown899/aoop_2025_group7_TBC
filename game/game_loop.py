@@ -438,11 +438,11 @@ async def main_game_loop(screen, clock):
                 square_surface=square_surface,
                 unlock_cats=unlocked_cats
             )
-
+            '''
             resource_text = f"Gold: {player_resources['gold']} Souls: {player_resources['souls']}"
             resource_surf = select_font.render(resource_text, True, (255, 215, 0))
             screen.blit(resource_surf, (50, 30))
-
+            '''
             pygame.display.flip()
 
             for event in pygame.event.get():
