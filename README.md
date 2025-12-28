@@ -180,6 +180,11 @@ aoop_2025_group7_TBC/
 若敵方塔血=0時, 代表我方勝利，螢幕下方黃色區域會顯示通關獎勵，可以按ENTER確認；反之, 就是敵方勝利，一樣按Enter繼續。
 ![win](intro/victory.png "勝利畫面")
 ![loss](intro/loss.png "失敗畫面")
+- **轉蛋系統**
+點擊右下角"Roll Single進行一次轉蛋"。必須消耗一定Gold和Souls（按鈕上有寫）。
+![gacha](intro/gacha.png "轉蛋頁面")
+中獎結果
+![win_gacha](intro/loss.png "中獎畫面")
 ## 需求與安裝
 ### 必要依賴
 - Python 3.8 或更高版本
