@@ -151,7 +151,7 @@ async def main_game_loop(screen, clock):
         (470, 250),
         (650, 390),
         (950, 280),
-        (1150, 280),
+        (1180, 280),
     ]
 
     # Import entities and UI
@@ -322,25 +322,25 @@ async def main_game_loop(screen, clock):
 
             screen.blit(main_menu_bg, (0, 0))
 
-            battle_rect = pygame.Rect(20, 300, 400, 150)
+            battle_rect = pygame.Rect(20, 250, 400, 150)
             pygame.draw.rect(screen, (0, 100, 0), battle_rect, border_radius=30)
             pygame.draw.rect(screen, (0, 255, 0), battle_rect, 8, border_radius=30)
             battle_text = select_font.render("go to battle", True, (255, 255, 255))
             screen.blit(battle_text, battle_text.get_rect(center=battle_rect.center))
 
-            gacha_rect = pygame.Rect(440, 300, 400, 150)
+            gacha_rect = pygame.Rect(440, 250, 400, 150)
             pygame.draw.rect(screen, (100, 0, 100), gacha_rect, border_radius=30)
             pygame.draw.rect(screen, (255, 0, 255), gacha_rect, 8, border_radius=30)
             gacha_text = select_font.render("get gecha", True, (255, 255, 255))
             screen.blit(gacha_text, gacha_text.get_rect(center=gacha_rect.center))
 
-            recharge_rect = pygame.Rect(860, 300, 400, 150)
+            recharge_rect = pygame.Rect(860, 250, 400, 150)
             pygame.draw.rect(screen, (0, 0, 100), recharge_rect, border_radius=30)
             pygame.draw.rect(screen, (0, 0, 255), recharge_rect, 8, border_radius=30)
             recharge_text = select_font.render("recharge", True, (255, 255, 255))
             screen.blit(recharge_text, recharge_text.get_rect(center=recharge_rect.center))
 
-            resource_text = f"Gold: {player_resources['gold']} Souls: {player_resources['souls']}"
+            resource_text = f"Gold: {player_resources['gold']}  Souls: {player_resources['souls']}"
             resource_surf = select_font.render(resource_text, True, (255, 215, 0))
             screen.blit(resource_surf, (50, 30))
 

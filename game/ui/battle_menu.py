@@ -60,7 +60,7 @@ def draw_battle_map_selection(
     font_header  = pygame.font.SysFont(None, 26)  # Section Headers
     font_content = pygame.font.SysFont(None, 22)  # Reward Content
     font_status  = pygame.font.SysFont(None, 20)  # Status Label
-    font_hint    = pygame.font.SysFont(None, 24)  # Control Hints
+    font_hint    = pygame.font.SysFont(None, 28)  # Control Hints
 
     # Detect hover and nearest node
     hovered_idx = None
@@ -98,10 +98,57 @@ def draw_battle_map_selection(
         if highlight:
             pygame.draw.circle(screen, (255, 255, 0), (nx, ny), 65, 8)
 
+
+
     # Control hints
     hint_str = "WASD/Arrows: Move | ENTER: Select Level | ESC: Main Menu"
-    hint_text = font_hint.render(hint_str, True, (255, 255, 200))
-    screen.blit(hint_text, (20, 20))
+
+    # ✅ 先畫一個半透明深底，確保任何背景都清楚
+    hint_pad_x, hint_pad_y = 12, 8
+    hint_pos = (20, 20)
+
+    hint_surf = font_hint.render(hint_str, True, (255, 255, 255))  # 白字最清楚
+    hint_bg = pygame.Surface(
+        (hint_surf.get_width() + hint_pad_x * 2, hint_surf.get_height() + hint_pad_y * 2),
+        pygame.SRCALPHA
+    )
+    hint_bg.fill((10, 10, 40, 230))  # 半透明黑底
+    screen.blit(hint_bg, hint_pos)
+    screen.blit(hint_surf, (hint_pos[0] + hint_pad_x, hint_pos[1] + hint_pad_y))
+
+    # ...existing code...
+
+    # ✅ 額外顏色說明（Legend）
+    # 讓玩家知道：灰=未解鎖、綠=已解鎖、淺綠=已通關、黃圈=靠近/滑鼠指到
+    legend_font = pygame.font.SysFont(None, 26)
+    legend_lines = [
+        "Legend:",
+        "Gray node   = Locked",
+        "Green node  = Unlocked",
+        "Light green = Completed",
+        "Yellow ring = Nearby / Hover",
+    ]
+
+    legend_x, legend_y = 20, 65  # 往下移，避免蓋到 hint
+    legend_pad_x, legend_pad_y = 12, 10
+
+    # ✅ 先算 legend 文字區塊需要多大
+    legend_surfs = [legend_font.render(line, True, (255, 255, 255)) for line in legend_lines]
+    legend_w = max(s.get_width() for s in legend_surfs)
+    legend_h = sum(s.get_height() for s in legend_surfs) + (len(legend_surfs) - 1) * 6
+
+    # ✅ 畫半透明底板
+    legend_bg = pygame.Surface((legend_w + legend_pad_x * 2, legend_h + legend_pad_y * 2), pygame.SRCALPHA)
+    legend_bg.fill((10, 10, 40, 230))
+    screen.blit(legend_bg, (legend_x, legend_y))
+
+    # ✅ 再把文字畫上去
+    y = legend_y + legend_pad_y
+    for surf in legend_surfs:
+        screen.blit(surf, (legend_x + legend_pad_x, y))
+        y += surf.get_height() + 6
+
+# ...existing code...
 
     # === Reward Preview Panel ===
     preview_idx = hovered_idx if hovered_idx is not None else nearest_idx
@@ -111,8 +158,8 @@ def draw_battle_map_selection(
         reward_data = LEVEL_REWARDS.get(preview_idx, {})
 
         # Panel settings
-        preview_x, preview_y = SCREEN_WIDTH - 460, SCREEN_HEIGHT - 580
-        preview_w, preview_h = 440, 560
+        preview_x, preview_y = SCREEN_WIDTH - 560, SCREEN_HEIGHT - 580
+        preview_w, preview_h = 540, 560
 
         # Semi-transparent background
         s = pygame.Surface((preview_w, preview_h))
