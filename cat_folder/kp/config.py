@@ -2,7 +2,7 @@ cat_config = {
     "id":101,
     "hp": 100000,
     "atk": 200,
-    "speed": 4,
+    "speed": 1,
     "color": (0, 255, 255),
     "attack_range": 210,
     "is_aoe": True,
@@ -24,7 +24,7 @@ cat_config = {
         +[f"cat_folder/kp/attacking/frame_000{i}.png" for i in range(100, 103)],
     "recovery_frames": [f"cat_folder/kp/attacking/frame_000{i}.png" for i in range(103, 170)],
     
-    "kb_frames": [],
+    "kb_frames": ["cat_folder/kp/walking/urudcd8G.png"],
     "delta_y": -42, # 微調 y 座標
     "ibtn_idle": "cat_folder/kp/ibtn_idle.png",
     "ibtn_hover": "cat_folder/kp/ibtn_hover.png",
