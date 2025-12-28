@@ -1,8 +1,8 @@
 cat_config = {
-    "id":102,
-    "hp": 100,
-    "atk": 2,
-    "speed": 1,
+    "id":103,
+    "hp": 2000,
+    "atk": 20,
+    "speed": 5,
     "color": (0, 255, 255),
     "attack_range": 210,
     "is_aoe": True,
@@ -26,8 +26,8 @@ cat_config = {
         # +[f"cat_folder/rickroll/attacking/frame_000{i}.png" for i in range(100, 103)],
     "recovery_frames": [f"cat_folder/rickroll/attacking/frame_0{i}.png" for i in range(26, 28)],
     
-    "kb_frames": [],
-    "delta_y": -42, # 微調 y 座標
+    "kb_frames": [f"cat_folder/rickroll/walking/frame_000.png"],
+    "delta_y": -30, # 微調 y 座標
     "ibtn_idle": "cat_folder/rickroll/ibtn_idle.png",
     "ibtn_hover": "cat_folder/rickroll/ibtn_hover.png",
     "ibtn_pressed": "cat_folder/rickroll/ibtn_pressed.png",

@@ -1,8 +1,8 @@
 cat_config = {
     "id":102,
-    "hp": 100,
-    "atk": 2,
-    "speed": 1,
+    "hp": 1000,
+    "atk": 20,
+    "speed": 5,
     "color": (0, 255, 255),
     "attack_range": 210,
     "is_aoe": True,
@@ -26,7 +26,7 @@ cat_config = {
         # +[f"cat_folder/oiia/attacking/frame_000{i}.png" for i in range(100, 103)],
     "recovery_frames": [f"cat_folder/oiia/attacking/frame_0{i}.png" for i in range(71, 94)],
     
-    "kb_frames": [],
+    "kb_frames": [f"cat_folder/oiia/walking/frame_000.png"],
     "delta_y": -42, # 微調 y 座標
     "ibtn_idle": "cat_folder/oiia/ibtn_idle.png",
     "ibtn_hover": "cat_folder/oiia/ibtn_hover.png",

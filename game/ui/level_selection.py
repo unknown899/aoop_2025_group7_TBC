@@ -58,45 +58,7 @@ def draw_level_selection(
         level_text = font.render(level.name if is_playable else f"{level.name} (Locked)", True, (255, 255, 255))
         screen.blit(level_text, (rect.x + 10, rect.y + 15))
 
-    # === 中間：貓咪選擇網格 ===
-    idy = 0
-    for cat_type in cat_types.keys():
-        if cat_type not in unlock_cats:
-            continue
-
-        col = idy % 5
-        row = idy // 5
-        rect = pygame.Rect(270 + col * 200, 100 + row * 80, 180, 70)
-        cat_rects[cat_type] = rect
-
-        is_selected = cat_type in selected_cats
-        bg_color = (100, 200, 100) if is_selected else (70, 70, 90)
-        pygame.draw.rect(screen, bg_color, rect, border_radius=15)
-        pygame.draw.rect(screen, (255, 255, 255), rect, 3, border_radius=15)
-
-        name_surf = font.render(cat_type.replace('_', ' ').title(), True, (255, 255, 255))
-        screen.blit(name_surf, (rect.x + 10, rect.y + 10))
-        cost = cat_costs.get(cat_type, 0)
-        cost_surf = font.render(f"Cost: {cost}", True, (255, 215, 0))
-        screen.blit(cost_surf, (rect.x + 10, rect.y + 35))
-
-        if is_selected:
-            pygame.draw.rect(screen, (0, 255, 0), rect, 5, border_radius=15)
-
-        if rect.collidepoint(mouse_pos):
-            hovered_cats.append((cat_type, rect))
-            pygame.draw.rect(screen, (255, 255, 100), rect, 5, border_radius=15)
-
-        idy += 1
-
-    # === 統一繪製 hover 大圖（最上層）===
-    for cat_type, rect in hovered_cats:
-        if cat_type in cat_images:
-            cat_img = cat_images[cat_type]
-            img_x = rect.x + (rect.width - cat_img.get_width()) // 2
-            img_y = rect.y + 60
-            screen.blit(cat_img, (img_x, img_y))
-
+    
     # === 底部：出擊陣容（嚴格按照你的邊框設定）===
     lineup_y = SCREEN_HEIGHT - 200
     lineup_height = 90
@@ -110,7 +72,7 @@ def draw_level_selection(
     pygame.draw.rect(screen, (0, 200, 255), (200, lineup_y, lineup_width, lineup_height * 2 + 20), 5)
 
     # 標題
-    title_text = font.render("出擊陣容 (快捷鍵 1-0)", True, (255, 255, 100))
+    title_text = font.render("battle stage(press 1-0)", True, (255, 255, 100))
     screen.blit(title_text, (210, lineup_y + 10))
 
     # 格子設定
@@ -191,6 +153,46 @@ def draw_level_selection(
     # 操作提示
     hint = font.render("Click cat to select (max 10) | Hover to preview | 1-0: Quick deploy", True, (200, 200, 255))
     screen.blit(hint, (300, SCREEN_HEIGHT - 95))
+    # === 中間：貓咪選擇網格 ===
+    idy = 0
+    for cat_type in cat_types.keys():
+        if cat_type not in unlock_cats:
+            continue
+
+        col = idy % 5
+        row = idy // 5
+        rect = pygame.Rect(270 + col * 200, 100 + row * 80, 180, 70)
+        cat_rects[cat_type] = rect
+
+        is_selected = cat_type in selected_cats
+        bg_color = (100, 200, 100) if is_selected else (70, 70, 90)
+        pygame.draw.rect(screen, bg_color, rect, border_radius=15)
+        pygame.draw.rect(screen, (255, 255, 255), rect, 3, border_radius=15)
+
+        name_surf = font.render(cat_type.replace('_', ' ').title(), True, (255, 255, 255))
+        screen.blit(name_surf, (rect.x + 10, rect.y + 10))
+        cost = cat_costs.get(cat_type, 0)
+        cost_surf = font.render(f"Cost: {cost}", True, (255, 215, 0))
+        screen.blit(cost_surf, (rect.x + 10, rect.y + 35))
+
+        if is_selected:
+            pygame.draw.rect(screen, (0, 255, 0), rect, 5, border_radius=15)
+
+        if rect.collidepoint(mouse_pos):
+            hovered_cats.append((cat_type, rect))
+            pygame.draw.rect(screen, (255, 255, 100), rect, 5, border_radius=15)
+
+        idy += 1
+
+    # === 統一繪製 hover 大圖（最上層）===
+    for cat_type, rect in hovered_cats:
+        if cat_type in cat_images:
+            cat_img = cat_images[cat_type]
+            img_x = rect.x + (rect.width - cat_img.get_width()) // 2
+            img_y = rect.y + 60
+            screen.blit(cat_img, (img_x, img_y))
+
+    
 
     pygame.display.flip()
 

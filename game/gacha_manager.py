@@ -34,6 +34,9 @@ def perform_gacha():
                 "kp",
                 "rickroll",
                 "oiia",
+                "koreanfish",
+                "chucky",
+                "memodog",
                 ]
     result = {"won_id": None, "is_new": False, "msg": ""}
 
