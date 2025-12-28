@@ -6,79 +6,147 @@ aoop-2025-proj repo
 ## 專案結構
 aoop_2025_group7_TBC/
 
-├── main.py              # 應用程式入口點，初始化並啟動遊戲
+├── main.py              # 應用程式入口點，初始化並啟動遊戲（呼叫 game/game_loop.py 主要迴圈）
 
-├── game/
+├── main_v2.py           # 備用/測試入口（如有使用）
 
-│   ├── init.py      # 標記為 Python 套件，控制模組導入
+├── README.md            # 專案說明文件
 
-│   ├── game_loop.py     # 管理遊戲事件循環、狀態更新和渲染
+├── completed_levels.json # 舊版/額外的通關紀錄（部分流程可能仍會讀取）
 
-│   ├── constants.py     # 儲存遊戲常數（如螢幕尺寸、速度、顏色）
+├── game/                # 遊戲主程式（Python package）
 
-│   ├── config_loader.py # 讀取並解析遊戲配置文件（如 JSON）
+│   ├── __init__.py      # 標記為 Python 套件
 
-│   ├── battle_logic.py  # 處理戰鬥邏輯和規則
+│   ├── game_loop.py     # ✅ 主要遊戲迴圈（State Machine）：intro/main_menu/level_map/cat_selection/gacha/recharge/playing/paused/end/ending
 
-│   ├── ui.py            # 負責繪製使用者介面（如選單、生命條）
+│   ├── game_loop_old.py # 舊版遊戲迴圈備份
 
-│   └── entities/
+│   ├── battle_logic.py  # 戰鬥核心邏輯（敵人生成、碰撞/傷害等更新）
 
-│       ├── init.py  # 標記為子套件
+│   ├── config_loader.py # 讀取並解析配置（角色/敵人/關卡等資料）
 
-│       ├── cat.py       # 定義 Cat 類別及其行為
+│   ├── constants.py     # 全域常數與共用資源（圖片/音效載入、路徑、Gacha cost 等）
 
-│       ├── cat_data.py  # 儲存貓咪類型和屬性數據
+│   ├── load_images.py   # 圖片載入工具（序列幀、縮放、alpha 等）
 
-│       ├── enemy.py     # 定義 Enemy 類別及其行為
+│   ├── map_data.py      # 地圖/關卡節點資料（關卡選擇地圖用）
 
-│       ├── enemy_data.py # 管理敵人屬性數據
+│   ├── rewards.py       # 獎勵/掉落/首通等規則資料
 
-│       ├── level.py     # 定義關卡結構
+│   ├── gacha_manager.py # 轉蛋邏輯（抽取、資料更新等）
 
-│       ├── level_data.py # 儲存關卡數據（如敵人波次）
+│   ├── gachaanimationplayer.py # 轉蛋動畫播放器（讀取 frame_paths 並播放）
 
-│       ├── tower.py     # 定義 Tower 實體
+│   ├── rechargemodal.py # 儲值/購買彈窗（信用卡輸入、成功提示等）
 
-│       ├── smokeeffect.py # 實現煙霧效果
+│   ├── uix.py           # UI 輔助/共用元件（若有使用）
 
-│       ├── shockwaveeffect.py # 實現衝擊波效果
+│   ├── game_charactor.py # 角色相關整合/舊檔（命名與實際用途以內容為準）
 
-│       └── soul.py      # 定義 Soul 實體（資源或敵人）
+│   ├── gameLoop/        # 分離出的遊戲狀態處理（模組化中的實驗/重構）
 
-│   ├── cat_folder/
+│   │   └── playing_handler.py # playing 狀態處理器（分拆 game_loop 的嘗試）
 
-│   │   └── XX/
+│   ├── ui/              # 各狀態 UI 畫面與選單
 
-│   │       ├── walking/ # 走路動畫
+│   │   ├── __init__.py
 
-│   │       ├── attacking/ # 攻擊動畫
+│   │   ├── intro.py             # 開場/故事畫面
 
-│   │       └── config.py # 角色資料
+│   │   ├── map_menu.py          # 地圖主選單相關 UI
 
-│   ├── enemy_folder/
+│   │   ├── map_level.py         # 地圖/節點顯示
 
-│   │   └── XX/
+│   │   ├── level_selection.py   # 關卡選擇 UI（或舊版）
 
-│   │       ├── walking/ # 走路動畫
+│   │   ├── battle_menu.py       # 關卡地圖選擇（draw_battle_map_selection）
 
-│   │       ├── attacking/ # 攻擊動畫
+│   │   ├── game_ui.py           # 戰鬥中 UI（按鈕、錢包、冷卻、鏡頭等）
 
-│   │       └── config.py # 敵人資料
+│   │   ├── pause_menu.py        # 暫停選單
 
-│   ├── level_folder/
+│   │   ├── end_screen.py        # 結算畫面（勝敗）
 
-│   │   └── level_X/
+│   │   ├── ending_animation.py  # 結尾動畫
 
-│   │       └── config.py # 關卡資料
+│   │   ├── gacha_ui.py          # 轉蛋 UI（roll、顯示結果、淡入淡出）
 
-│   └── background/
+│   │   └── recharge_screen.py   # 儲值畫面 UI
 
-│       └── background1.png # 背景圖片
+│   └── entities/        # 遊戲實體（角色、敵人、關卡、特效、技能等）
 
-└── background/
+│       ├── __init__.py
 
-└── backgroundStory.txt # 開場動畫故事內容
+│       ├── common.py            # 共用基底/工具（數值、碰撞等）
+
+│       ├── cat.py               # 我方角色（貓）行為/動畫/戰鬥
+
+│       ├── cat_data.py          # 貓咪類型與屬性資料
+
+│       ├── enemy.py             # 敵人行為/動畫/戰鬥
+
+│       ├── enemy_data.py        # 敵人屬性資料
+
+│       ├── enemyspawner.py      # 敵人生成器（依關卡/策略生成）
+
+│       ├── spawnstrategies.py   # 生成策略（不同生成規則）
+
+│       ├── level.py             # Level 類別（背景、塔、生成參數等）
+
+│       ├── level_data.py        # 關卡配置資料
+
+│       ├── tower.py             # 我方/敵方塔（血量、位置等）
+
+│       ├── ymanager.py          # 出擊 y 軸管理（slot/占位）
+
+│       ├── soul.py              # 靈魂/資源實體
+
+│       ├── cannonskill.py       # 砲擊技能（beam/sweep/after FX 等）
+
+│       ├── cannonicon.py        # 砲擊技能 icon（mask 點擊判定、冷卻注水效果）
+
+│       ├── smokeeffect.py       # 煙霧特效
+
+│       ├── csmokeeffect.py      # 兩組煙霧特效（雙面/雙點）
+
+│       ├── shockwaveeffect.py   # 衝擊波特效
+
+│       ├── electriceffect.py    # 電擊特效
+
+│       ├── gaseffect.py         # 毒氣特效
+
+│       └── physiceffect.py      # 物理/打擊特效
+
+├── data/                # 玩家存檔/資源資料（JSON）
+
+│   ├── player_resources.json        # 金幣/靈魂等資源
+
+│   └── player_unlocked_cats.json    # 已解鎖角色
+
+├── images/              # 遊戲圖片資源（背景、角色、特效、UI 等）
+
+├── audio/               # 音效/背景音樂資源
+
+├── cat_folder/          # 角色動畫素材與設定
+
+├── enemy_folder/        # 敵人動畫素材與設定
+
+├── level_folder/        # 關卡設定資料
+
+├── intro/               # README 示意圖、開場相關素材（非必然由程式讀取）
+
+├── gacha_rotate/        # 轉蛋影片拆幀輸出（若未搬到 images/ 仍可保留）
+
+├── video2img/           # 影片轉圖片工具（OpenCV 拆幀）
+
+│   └── video2img.py
+
+├── test_TBC.py          # 測試/實驗腳本
+
+├── wasm_server.py       # wasm/網頁部署輔助（如有使用）
+
+└── build/               # build 產物（可忽略或由工具生成）
 
 ## 功能特性
 - **開場動畫**：從下往上滑動的故事介紹，可點擊 "Skip" 跳過。
