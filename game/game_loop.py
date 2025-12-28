@@ -24,6 +24,7 @@ player_resources = {"gold": 0, "souls": 0}
 selected_cats = []
 selected_level = 0
 game_state = "intro"
+previous_game_state = "intro"
 
 
 
@@ -157,7 +158,7 @@ async def main_game_loop(screen, clock):
     from .battle_logic import update_battle
     from .ui import draw_game_ui, draw_pause_menu, draw_end_screen, draw_intro_screen, draw_ending_animation, draw_level_selection
     from .entities import cat_types, cat_costs, cat_cooldowns, levels, enemy_types, YManager, CSmokeEffect, load_cat_images, OriginalSpawnStrategy, AdvancedSpawnStrategy, MLSpawnStrategy, EnemySpawner, CannonSkill, CannonIcon
-    from game.constants import csmoke_images1, csmoke_images2, cannon_images, icon_cfg, gacha_anim_player
+    from game.constants import csmoke_images1, csmoke_images2, cannon_images, icon_cfg, gacha_anim_player, recharge_modal, recharge_bg
 
     # Battle variables
     cats = []
@@ -321,17 +322,23 @@ async def main_game_loop(screen, clock):
 
             screen.blit(main_menu_bg, (0, 0))
 
-            battle_rect = pygame.Rect(200, 300, 400, 150)
+            battle_rect = pygame.Rect(20, 300, 400, 150)
             pygame.draw.rect(screen, (0, 100, 0), battle_rect, border_radius=30)
             pygame.draw.rect(screen, (0, 255, 0), battle_rect, 8, border_radius=30)
             battle_text = select_font.render("go to battle", True, (255, 255, 255))
             screen.blit(battle_text, battle_text.get_rect(center=battle_rect.center))
 
-            gacha_rect = pygame.Rect(680, 300, 400, 150)
+            gacha_rect = pygame.Rect(440, 300, 400, 150)
             pygame.draw.rect(screen, (100, 0, 100), gacha_rect, border_radius=30)
             pygame.draw.rect(screen, (255, 0, 255), gacha_rect, 8, border_radius=30)
             gacha_text = select_font.render("get gecha", True, (255, 255, 255))
             screen.blit(gacha_text, gacha_text.get_rect(center=gacha_rect.center))
+
+            recharge_rect = pygame.Rect(860, 300, 400, 150)
+            pygame.draw.rect(screen, (0, 0, 100), recharge_rect, border_radius=30)
+            pygame.draw.rect(screen, (0, 0, 255), recharge_rect, 8, border_radius=30)
+            recharge_text = select_font.render("recharge", True, (255, 255, 255))
+            screen.blit(recharge_text, recharge_text.get_rect(center=recharge_rect.center))
 
             resource_text = f"Gold: {player_resources['gold']} Souls: {player_resources['souls']}"
             resource_surf = select_font.render(resource_text, True, (255, 215, 0))
@@ -361,6 +368,11 @@ async def main_game_loop(screen, clock):
                         game_state = "gacha"
                         if key_action_sfx.get('other_button'):
                             key_action_sfx['other_button'].play()
+                    elif recharge_rect.collidepoint(pos):
+                        previous_game_state = "main_menu"
+                        game_state = "recharge"
+                        if key_action_sfx.get('other_button'):
+                            key_action_channel.play(key_action_sfx['other_button'])
 
 
         elif game_state == "level_map":
@@ -611,15 +623,35 @@ async def main_game_loop(screen, clock):
             if gacha_result and gacha_result['won_id'] not in unlocked_cats:
                 unlocked_cats.add(gacha_result['won_id'])  # 解鎖貓咪
 
-            if new_state == "main_menu":
-                game_state = "main_menu"
+            if new_state is not None:#not continue gacha
                 gacha_is_anim_playing = False
                 gacha_is_fading = False          # 白畫面淡出中
                 gacha_show_result = False        # 顯示結果中
                 gacha_fade_alpha = 255           # 白畫面透明度
                 gacha_result = None
+
+            if new_state == "main_menu":
+                game_state = "main_menu"
             elif new_state == "quit":
                 return
+            elif new_state == "recharge":
+                previous_game_state = "gacha"
+                game_state = "recharge"
+        elif game_state == "recharge":
+            from .ui.recharge_screen import draw_recharge_screen
+            draw_recharge_screen(
+                screen,
+                recharge_bg,
+                recharge_modal
+            )
+            for event in pygame.event.get():
+                ret = recharge_modal.handle_event(event)
+                if ret == "close":
+                    game_state = previous_game_state
+                    recharge_modal.reset()
+                elif ret == "quit":
+                    return
+
         elif game_state == "playing":
             current_level = levels[selected_level]
             bg_width = current_level.background.get_width()

@@ -1,7 +1,9 @@
 from .load_images import* 
 from .gachaanimationplayer import GachaAnimationPlayer
+from .rechargemodal import RechargeModal
 import os
 import re
+import pygame
 
 ## constants.py
 BOTTOM_Y = 490
@@ -89,4 +91,25 @@ gacha_anim_player = GachaAnimationPlayer(
     frame_paths=frame_paths,
     pos=(640, 300),
     frame_duration=150
+)
+visa_img = load_single_image(
+    path="images/visa.jpeg", 
+    size=(90, 50),
+    convert_alpha=False  # 去背透明
+)
+
+# 初始化充值視窗
+recharge_modal = RechargeModal(
+    panel_rect=pygame.Rect(180, 75, 920, 450),
+    resource_file=RESOURCE_FILE,
+    font1 = pygame.font.SysFont(None, 60),
+    font2 = pygame.font.SysFont(None, 40),
+    font3 = pygame.font.SysFont(None, 50),
+    success_rect=pygame.Rect(340, 200, 650, 250),
+    visa_img=visa_img
+)
+recharge_bg = load_single_image(
+    path="images/background/recharge_bg.jpg", 
+    size=(1280, 600),
+    convert_alpha=False  # 背景通常不透明，False 可微幅提升效能
 )

@@ -111,8 +111,8 @@ def draw_battle_map_selection(
         reward_data = LEVEL_REWARDS.get(preview_idx, {})
 
         # Panel settings
-        preview_x, preview_y = SCREEN_WIDTH - 460, SCREEN_HEIGHT - 520
-        preview_w, preview_h = 440, 600
+        preview_x, preview_y = SCREEN_WIDTH - 460, SCREEN_HEIGHT - 580
+        preview_w, preview_h = 440, 560
 
         # Semi-transparent background
         s = pygame.Surface((preview_w, preview_h))
