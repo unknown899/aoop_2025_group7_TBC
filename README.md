@@ -216,5 +216,5 @@ aoop_2025_group7_TBC/
     python3 main_v2.py
 ## class diagram(簡化)
 
-![classDiagram](class_diagram.png "class diagram")
+![classDiagram](intro/class_diagram.png "class diagram")
 
