@@ -218,3 +218,6 @@ aoop_2025_group7_TBC/
 
 ![classDiagram](intro/class_diagram.png "class diagram")
 
+## finite state graph(不包含"quit")
+
+![finite state graph](intro/state_graph.png "finite state graph")
