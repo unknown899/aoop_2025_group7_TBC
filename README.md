@@ -221,3 +221,9 @@ aoop_2025_group7_TBC/
 ## finite state graph(不包含"quit")
 
 ![finite state graph](intro/state_graph.png "finite state graph")
+Finite State Machine of the game. 
+State A represents Intro; B represents Cat Selection; 
+C represents Playing; D represents Main Menu; 
+E represents Paused; F represents End; 
+G represents Level Map; H represents Ending; 
+I represents Gacha; and J represents Recharge.
